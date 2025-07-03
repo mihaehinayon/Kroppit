@@ -899,7 +899,7 @@ export function PhotoCropperCard({
 
           {/* Crop Size Controls */}
           <div className="space-y-3">
-            <div className="text-sm font-medium text-[var(--app-foreground)]">Crop Size:</div>
+            <div className="text-sm font-medium text-[var(--app-foreground)]">Crop Dimensions:</div>
             <div className="flex gap-2 justify-center">
               <Button
                 onClick={() => setCropSize('square')}
@@ -992,17 +992,6 @@ export function PhotoCropperCard({
           </div>
         )}
 
-        {/* Instructions */}
-        {image && !showPreview && (
-          <div className="p-3 bg-blue-50 rounded-lg text-sm text-blue-800 border border-blue-200">
-            <div className="font-semibold mb-1">📐 How to crop:</div>
-            <div>1. Choose a <strong>crop size</strong> (Square, Landscape, Portrait)</div>
-            <div>2. <strong>Drag the center</strong> to move the crop area</div>
-            <div>3. <strong>Drag corners or edges</strong> to resize the crop area</div>
-            <div>4. Click <strong>"Krop Image"</strong> when you're happy with the selection</div>
-            <div>5. Download or share your cropped image!</div>
-          </div>
-        )}
 
         {/* New photo button when preview is shown */}
         {showPreview && (
