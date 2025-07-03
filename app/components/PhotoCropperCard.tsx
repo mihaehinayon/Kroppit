@@ -36,6 +36,8 @@ export function PhotoCropperCard({
   const [isProcessing, setIsProcessing] = useState(false);
   const [isDragOver, setIsDragOver] = useState(false);
   const [isDraggingCrop, setIsDraggingCrop] = useState(false);
+  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+  const [cropShape, setCropShape] = useState<'rectangle' | 'circle'>('rectangle');
   
   // Use refs for dragging state to avoid stale closure issues
   const isDraggingCropRef = useRef(false);
@@ -67,12 +69,12 @@ export function PhotoCropperCard({
         const constrainedX = Math.max(0, Math.min(newX, canvas.width - cropData.width));
         const constrainedY = Math.max(0, Math.min(newY, canvas.height - cropData.height));
         
-        setCropData({
+        setCropData(prevCrop => ({
           x: constrainedX,
           y: constrainedY,
-          width: cropData.width,
-          height: cropData.height
-        });
+          width: prevCrop.width,
+          height: prevCrop.height
+        }));
       } else if (isResizingRef.current) {
         const handle = resizeHandleRef.current;
         const startCrop = cropStartRef.current;
@@ -402,11 +404,38 @@ export function PhotoCropperCard({
 
     console.log('✅ Drawing cropped image...');
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.drawImage(
-      image,
-      actualCrop.x, actualCrop.y, actualCrop.width, actualCrop.height,
-      0, 0, actualCrop.width, actualCrop.height
-    );
+    
+    if (cropShape === 'circle') {
+      // For circular crop, we need to create a circular mask
+      const centerX = canvas.width / 2;
+      const centerY = canvas.height / 2;
+      const radius = Math.min(canvas.width, canvas.height) / 2;
+      
+      // Save the context state
+      ctx.save();
+      
+      // Create circular clipping path
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
+      ctx.clip();
+      
+      // Draw the image within the circular clip
+      ctx.drawImage(
+        image,
+        actualCrop.x, actualCrop.y, actualCrop.width, actualCrop.height,
+        0, 0, actualCrop.width, actualCrop.height
+      );
+      
+      // Restore the context state
+      ctx.restore();
+    } else {
+      // Regular rectangular crop
+      ctx.drawImage(
+        image,
+        actualCrop.x, actualCrop.y, actualCrop.width, actualCrop.height,
+        0, 0, actualCrop.width, actualCrop.height
+      );
+    }
 
     const imageData = canvas.toDataURL('image/png');
     console.log('✅ Image data created, length:', imageData.length);
@@ -419,7 +448,23 @@ export function PhotoCropperCard({
       const displayCtx = displayCanvas.getContext('2d');
       if (displayCtx) {
         displayCtx.clearRect(0, 0, displayCanvas.width, displayCanvas.height);
-        displayCtx.drawImage(canvas, 0, 0);
+        
+        if (cropShape === 'circle') {
+          // Apply circular clipping for display canvas too
+          const centerX = displayCanvas.width / 2;
+          const centerY = displayCanvas.height / 2;
+          const radius = Math.min(displayCanvas.width, displayCanvas.height) / 2;
+          
+          displayCtx.save();
+          displayCtx.beginPath();
+          displayCtx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
+          displayCtx.clip();
+          displayCtx.drawImage(canvas, 0, 0);
+          displayCtx.restore();
+        } else {
+          displayCtx.drawImage(canvas, 0, 0);
+        }
+        
         console.log('✅ Display canvas updated');
       }
     }
@@ -428,7 +473,7 @@ export function PhotoCropperCard({
     setShowPreview(true);
     setIsProcessing(false);
     console.log('✅ Crop operation completed!');
-  }, [image, cropData, scale]);
+  }, [image, cropData, scale, cropShape]);
 
   // Download cropped image
   const downloadImage = useCallback(() => {
@@ -465,7 +510,7 @@ export function PhotoCropperCard({
   }, [openUrl]);
 
   // Set crop size
-  const setCropSize = useCallback((size: 'square' | 'landscape' | 'portrait') => {
+  const setCropSize = useCallback((size: 'square' | 'landscape' | 'portrait' | 'circle') => {
     const canvas = canvasRef.current;
     if (!canvas || !image) return;
 
@@ -475,14 +520,21 @@ export function PhotoCropperCard({
     switch (size) {
       case 'square':
         width = height = maxSize;
+        setCropShape('rectangle');
         break;
       case 'landscape':
         width = canvas.width * 0.8;
         height = width * 0.6; // 16:9-ish ratio
+        setCropShape('rectangle');
         break;
       case 'portrait':
         height = canvas.height * 0.8;
         width = height * 0.75; // 4:3-ish ratio
+        setCropShape('rectangle');
+        break;
+      case 'circle':
+        width = height = maxSize;
+        setCropShape('circle');
         break;
     }
 
@@ -625,7 +677,7 @@ export function PhotoCropperCard({
               {/* Draggable crop area */}
               {cropData.width > 0 && cropData.height > 0 && (
                 <div
-                  className="absolute border-2 border-white shadow-lg cursor-move transition-all"
+                  className={`absolute border-2 border-white shadow-lg cursor-move transition-all ${cropShape === 'circle' ? 'rounded-full' : ''}`}
                   style={{
                     left: cropData.x + 'px',
                     top: cropData.y + 'px',
@@ -656,12 +708,6 @@ export function PhotoCropperCard({
                     console.log('🎯 Drag started at:', pos);
                   }}
                 >
-                  {/* Center drag handle */}
-                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                    <div className="bg-white/90 rounded-full px-2 py-1 text-xs font-mono">
-                      ⋮⋮
-                    </div>
-                  </div>
 
                   {/* Corner resize handles */}
                   <div
@@ -813,53 +859,39 @@ export function PhotoCropperCard({
                 </div>
               )}
               
-              {/* Dimmed overlay for cropped out areas */}
+              {/* Overlay to show grayed out areas - only when not dragging */}
               {cropData.width > 0 && cropData.height > 0 && !isDraggingCrop && (
                 <>
-                  {/* Top overlay */}
-                  <div
-                    className="absolute bg-black/40 pointer-events-none"
-                    style={{
-                      left: 0,
-                      top: 0,
-                      width: '100%',
-                      height: cropData.y + 'px',
-                      zIndex: 1
-                    }}
-                  />
-                  {/* Bottom overlay */}
-                  <div
-                    className="absolute bg-black/40 pointer-events-none"
-                    style={{
-                      left: 0,
-                      top: (cropData.y + cropData.height) + 'px',
-                      width: '100%',
-                      height: `calc(100% - ${cropData.y + cropData.height}px)`,
-                      zIndex: 1
-                    }}
-                  />
-                  {/* Left overlay */}
-                  <div
-                    className="absolute bg-black/40 pointer-events-none"
-                    style={{
-                      left: 0,
-                      top: cropData.y + 'px',
-                      width: cropData.x + 'px',
-                      height: cropData.height + 'px',
-                      zIndex: 1
-                    }}
-                  />
-                  {/* Right overlay */}
-                  <div
-                    className="absolute bg-black/40 pointer-events-none"
-                    style={{
-                      left: (cropData.x + cropData.width) + 'px',
-                      top: cropData.y + 'px',
-                      width: `calc(100% - ${cropData.x + cropData.width}px)`,
-                      height: cropData.height + 'px',
-                      zIndex: 1
-                    }}
-                  />
+                  {cropShape === 'circle' ? (
+                    /* Circle overlay - everything except the circle */
+                    <div
+                      className="absolute inset-0 pointer-events-none"
+                      style={{
+                        background: `radial-gradient(circle ${Math.min(cropData.width, cropData.height) / 2}px at ${cropData.x + cropData.width / 2}px ${cropData.y + cropData.height / 2}px, transparent ${Math.min(cropData.width, cropData.height) / 2}px, rgba(0,0,0,0.4) ${Math.min(cropData.width, cropData.height) / 2 + 1}px)`,
+                        zIndex: 1
+                      }}
+                    />
+                  ) : (
+                    /* Rectangle overlay */
+                    <div
+                      className="absolute inset-0 bg-black/40 pointer-events-none"
+                      style={{
+                        clipPath: `polygon(
+                          0% 0%, 
+                          0% 100%, 
+                          ${cropData.x}px 100%, 
+                          ${cropData.x}px ${cropData.y}px, 
+                          ${cropData.x + cropData.width}px ${cropData.y}px, 
+                          ${cropData.x + cropData.width}px ${cropData.y + cropData.height}px, 
+                          ${cropData.x}px ${cropData.y + cropData.height}px, 
+                          ${cropData.x}px 100%, 
+                          100% 100%, 
+                          100% 0%
+                        )`,
+                        zIndex: 1
+                      }}
+                    />
+                  )}
                 </>
               )}
             </div>
@@ -895,6 +927,15 @@ export function PhotoCropperCard({
                 title="Portrait (3:4)"
               >
                 <div className="w-4 h-7 border-2 border-current rounded-sm"></div>
+              </Button>
+              <Button
+                onClick={() => setCropSize('circle')}
+                variant="secondary"
+                size="sm"
+                className="w-12 h-12 p-2"
+                title="Circle"
+              >
+                <div className="w-6 h-6 border-2 border-current rounded-full"></div>
               </Button>
             </div>
           </div>
