@@ -36,7 +36,6 @@ export function PhotoCropperCard({
   const [isProcessing, setIsProcessing] = useState(false);
   const [isDragOver, setIsDragOver] = useState(false);
   const [isDraggingCrop, setIsDraggingCrop] = useState(false);
-  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const [cropShape, setCropShape] = useState<'rectangle' | 'circle'>('rectangle');
   
   // Use refs for dragging state to avoid stale closure issues
