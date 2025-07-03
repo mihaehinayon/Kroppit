@@ -35,6 +35,7 @@ export function PhotoCropperCard({
   const [showPreview, setShowPreview] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [isDragOver, setIsDragOver] = useState(false);
+  const [isDraggingCrop, setIsDraggingCrop] = useState(false);
   
   // Use refs for dragging state to avoid stale closure issues
   const isDraggingCropRef = useRef(false);
@@ -134,6 +135,7 @@ export function PhotoCropperCard({
       if (isDraggingCropRef.current) {
         console.log('🎯 Global mouse up - stopping drag');
         isDraggingCropRef.current = false;
+        setIsDraggingCrop(false);
       }
       if (isResizingRef.current) {
         console.log('🎯 Global mouse up - stopping resize');
@@ -356,68 +358,6 @@ export function PhotoCropperCard({
            mouseY <= cropData.y + cropData.height;
   }, [cropData]);
 
-  // Mouse handlers for dragging crop area
-  const handleMouseDown = (event: React.MouseEvent<HTMLCanvasElement>) => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    
-    const rect = canvas.getBoundingClientRect();
-    const pos = {
-      x: event.clientX - rect.left,
-      y: event.clientY - rect.top
-    };
-    
-    console.log('🎯 Mouse down at:', pos);
-    
-    // Check if clicking on crop area
-    if (isMouseOverCrop(pos.x, pos.y)) {
-      console.log('🎯 Starting crop drag');
-      isDraggingCropRef.current = true;
-      dragStartRef.current = pos;
-      cropStartRef.current = { x: cropData.x, y: cropData.y, width: cropData.width, height: cropData.height };
-      event.preventDefault();
-    }
-  };
-
-  const handleMouseMove = (event: React.MouseEvent<HTMLCanvasElement>) => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    
-    const rect = canvas.getBoundingClientRect();
-    const pos = {
-      x: event.clientX - rect.left,
-      y: event.clientY - rect.top
-    };
-    
-    if (isDraggingCropRef.current) {
-      console.log('🎯 Dragging crop area');
-      
-      // Calculate new position
-      const deltaX = pos.x - dragStartRef.current.x;
-      const deltaY = pos.y - dragStartRef.current.y;
-      
-      const newX = cropStartRef.current.x + deltaX;
-      const newY = cropStartRef.current.y + deltaY;
-      
-      // Constrain to canvas bounds
-      const constrainedX = Math.max(0, Math.min(newX, canvas.width - cropData.width));
-      const constrainedY = Math.max(0, Math.min(newY, canvas.height - cropData.height));
-      
-      setCropData({
-        x: constrainedX,
-        y: constrainedY,
-        width: cropData.width,
-        height: cropData.height
-      });
-    }
-  };
-
-  const handleMouseUp = () => {
-    if (isDraggingCropRef.current) {
-      console.log('🎯 Finished dragging crop area');
-      isDraggingCropRef.current = false;
-    }
-  };
 
   // Perform crop operation
   const performCrop = useCallback(() => {
@@ -679,23 +619,20 @@ export function PhotoCropperCard({
                 style={{ 
                   display: 'block'
                 }}
-                onMouseDown={handleMouseDown}
-                onMouseMove={handleMouseMove}
-                onMouseUp={handleMouseUp}
               />
               
               
               {/* Draggable crop area */}
               {cropData.width > 0 && cropData.height > 0 && (
                 <div
-                  className="absolute border-2 border-white shadow-lg cursor-move hover:bg-white/10 transition-all"
+                  className="absolute border-2 border-white shadow-lg cursor-move transition-all"
                   style={{
                     left: cropData.x + 'px',
                     top: cropData.y + 'px',
                     width: cropData.width + 'px',
                     height: cropData.height + 'px',
                     zIndex: 1000,
-                    backgroundColor: isDraggingCropRef.current ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.05)'
+                    backgroundColor: 'transparent'
                   }}
                   onMouseDown={(e) => {
                     console.log('🎯 Starting drag');
@@ -712,6 +649,7 @@ export function PhotoCropperCard({
                     };
                     
                     isDraggingCropRef.current = true;
+                    setIsDraggingCrop(true);
                     dragStartRef.current = pos;
                     cropStartRef.current = { x: cropData.x, y: cropData.y, width: cropData.width, height: cropData.height };
                     
@@ -876,7 +814,7 @@ export function PhotoCropperCard({
               )}
               
               {/* Dimmed overlay for cropped out areas */}
-              {cropData.width > 0 && cropData.height > 0 && (
+              {cropData.width > 0 && cropData.height > 0 && !isDraggingCrop && (
                 <>
                   {/* Top overlay */}
                   <div
