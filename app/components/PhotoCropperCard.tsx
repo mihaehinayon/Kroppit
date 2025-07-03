@@ -899,7 +899,7 @@ export function PhotoCropperCard({
 
           {/* Crop Size Controls */}
           <div className="space-y-3">
-            <div className="text-sm font-medium text-[var(--app-foreground)]">Crop Dimensions:</div>
+            <div className="text-sm font-medium text-[var(--app-foreground)] text-center">Crop Dimensions:</div>
             <div className="flex gap-2 justify-center">
               <Button
                 onClick={() => setCropSize('square')}
