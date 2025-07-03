@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState, useCallback, useEffect } from 'react';
-import { useNotification, useOpenUrl, useComposeCast } from "@coinbase/onchainkit/minikit";
+import { useNotification, useOpenUrl } from "@coinbase/onchainkit/minikit";
 import { Button, Icon } from "./DemoComponents";
 
 interface CropData {
@@ -26,7 +26,6 @@ export function PhotoCropperCard({
   // Mini Kit hooks
   const sendNotification = useNotification();
   const openUrl = useOpenUrl();
-  const composeCast = useComposeCast();
 
   // State
   const [image, setImage] = useState<HTMLImageElement | null>(null);
@@ -504,8 +503,8 @@ export function PhotoCropperCard({
     }, 'image/png');
   }, [croppedImageData, sendNotification]);
 
-  // Cast cropped image to Farcaster
-  const castToFarcaster = useCallback(async () => {
+  // Share to Farcaster - downloads image and opens compose
+  const shareToFarcaster = useCallback(async () => {
     if (!croppedImageData) {
       alert('Please crop an image first!');
       return;
@@ -516,34 +515,36 @@ export function PhotoCropperCard({
     setIsCasting(true);
 
     try {
-      // Convert base64 image data to blob
-      const response = await fetch(croppedImageData);
-      const blob = await response.blob();
+      // Auto-download the cropped image first
+      const link = document.createElement('a');
+      link.download = 'kropped-image.png';
+      link.href = croppedImageData;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
       
-      // Create a file from the blob
-      const file = new File([blob], 'kropped-image.png', { type: 'image/png' });
+      // Open Farcaster compose with pre-filled text
+      const shareText = "Just kropped the perfect photo! 📸✨ Made with Kroppit\n\n(Upload the downloaded image to complete your cast)";
+      const shareUrl = `https://warpcast.com/~/compose?text=${encodeURIComponent(shareText)}`;
       
-      // Compose cast with image and text
-      await composeCast({
-        text: "Just kropped the perfect photo! 📸✨ Made with Kroppit",
-        images: [file]
-      });
+      // Use MiniKit's openUrl for better integration
+      openUrl(shareUrl);
       
       // Send success notification
       sendNotification({
         type: 'success',
-        message: 'Cast created successfully! 🎉'
+        message: 'Image downloaded! Complete your cast in Farcaster 🎉'
       });
     } catch (error) {
-      console.error('Failed to cast to Farcaster:', error);
+      console.error('Failed to prepare cast:', error);
       sendNotification({
         type: 'error',
-        message: 'Failed to create cast. Please try again.'
+        message: 'Failed to prepare cast. Please try again.'
       });
     } finally {
       setIsCasting(false);
     }
-  }, [croppedImageData, composeCast, sendNotification, isCasting]);
+  }, [croppedImageData, openUrl, sendNotification, isCasting]);
 
   // Set crop size
   const setCropSize = useCallback((size: 'square' | 'landscape' | 'portrait' | 'circle') => {
@@ -1017,14 +1018,14 @@ export function PhotoCropperCard({
               Download
             </Button>
             <Button
-              onClick={castToFarcaster}
+              onClick={shareToFarcaster}
               variant="outline"
               size="sm"
               className="flex-1"
               disabled={isCasting}
               icon={<Icon name="star" size="sm" />}
             >
-              {isCasting ? 'Casting...' : 'Cast to Farcaster'}
+              {isCasting ? 'Preparing...' : 'Share to Farcaster'}
             </Button>
           </div>
         )}
