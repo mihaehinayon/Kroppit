@@ -1,0 +1,99 @@
+
+> kroppit@0.1.0 dev
+> next dev
+
+   ▲ Next.js 15.3.4
+   - Local:        http://localhost:3000
+   - Network:      http://192.168.1.10:3000
+   - Environments: .env
+
+ ✓ Starting...
+ ✓ Ready in 1651ms
+ ○ Compiling / ...
+ ✓ Compiled / in 27.6s (9747 modules)
+ HEAD / 200 in 28457ms
+ ✓ Compiled in 3.7s (4744 modules)
+   Reload env: .env
+ ✓ Compiled in 2.2s (9707 modules)
+ GET / 200 in 542ms
+ GET / 200 in 133ms
+ HEAD / 200 in 134ms
+ ✓ Compiled in 3.1s (9734 modules)
+ GET / 200 in 120ms
+ ✓ Compiled in 1557ms (9734 modules)
+ GET / 200 in 263ms
+ ✓ Compiled in 3.6s (9734 modules)
+ GET / 200 in 167ms
+ ✓ Compiled in 2.8s (9734 modules)
+ GET / 200 in 181ms
+ ✓ Compiled in 1639ms (9734 modules)
+ GET / 200 in 112ms
+ ✓ Compiled in 2.4s (9734 modules)
+ GET / 200 in 93ms
+ ✓ Compiled in 3.3s (9734 modules)
+ GET / 200 in 115ms
+ ✓ Compiled in 2.3s (9734 modules)
+ GET / 200 in 54ms
+ ✓ Compiled in 1287ms (9734 modules)
+ GET / 200 in 72ms
+ ✓ Compiled in 3.3s (9734 modules)
+ GET / 200 in 135ms
+ ✓ Compiled in 1663ms (9734 modules)
+ GET / 200 in 146ms
+ ✓ Compiled in 1360ms (9734 modules)
+ GET / 200 in 157ms
+ ⨯ ./app/components/PhotoCropperCard.tsx
+Error:   [31mx[0m Unexpected token `div`. Expected jsx identifier
+     ,-[[36;1;4m/Users/mihaehinayon/Kroppit/app/components/PhotoCropperCard.tsx[0m:622:1]
+ [2m619[0m |   }, []);
+ [2m620[0m | 
+ [2m621[0m |   return (
+ [2m622[0m |     <div className={`bg-[var(--app-card-bg)] backdrop-blur-md rounded-xl shadow-lg border border-[var(--app-card-border)] overflow-hidden ${className}`}>
+     : [35;1m     ^^^[0m
+ [2m623[0m |       <div className="p-5 space-y-4">
+ [2m624[0m |         
+ [2m625[0m |         {/* Upload Area */}
+     `----
+
+Caused by:
+    Syntax Error
+
+Import trace for requested module:
+./app/components/PhotoCropperCard.tsx
+./app/page.tsx
+ ⨯ ./app/components/PhotoCropperCard.tsx
+Error:   [31mx[0m Unexpected token `div`. Expected jsx identifier
+     ,-[[36;1;4m/Users/mihaehinayon/Kroppit/app/components/PhotoCropperCard.tsx[0m:622:1]
+ [2m619[0m |   }, []);
+ [2m620[0m | 
+ [2m621[0m |   return (
+ [2m622[0m |     <div className={`bg-[var(--app-card-bg)] backdrop-blur-md rounded-xl shadow-lg border border-[var(--app-card-border)] overflow-hidden ${className}`}>
+     : [35;1m     ^^^[0m
+ [2m623[0m |       <div className="p-5 space-y-4">
+ [2m624[0m |         
+ [2m625[0m |         {/* Upload Area */}
+     `----
+
+Caused by:
+    Syntax Error
+
+Import trace for requested module:
+./app/components/PhotoCropperCard.tsx
+./app/page.tsx
+ ✓ Compiled in 3.3s (9734 modules)
+ GET / 200 in 610ms
+ HEAD / 200 in 494ms
+ GET / 200 in 129ms
+ HEAD / 200 in 84ms
+ ✓ Compiled in 3.3s (9734 modules)
+ GET / 200 in 95ms
+ ✓ Compiled in 3.4s (9734 modules)
+ GET / 200 in 254ms
+ ✓ Compiled in 1411ms (9734 modules)
+ GET / 200 in 108ms
+ ✓ Compiled in 1470ms (9734 modules)
+ GET / 200 in 146ms
+ ✓ Compiled in 1517ms (9734 modules)
+ GET / 200 in 75ms
+ ✓ Compiled in 1536ms (9734 modules)
+ GET / 200 in 63ms
