@@ -503,8 +503,8 @@ export function PhotoCropperCard({
     }, 'image/png');
   }, [croppedImageData, sendNotification]);
 
-  // Share to Farcaster - downloads image and opens compose
-  const shareToFarcaster = useCallback(async () => {
+  // Cast to Farcaster directly with hosted image
+  const castToFarcaster = useCallback(async () => {
     if (!croppedImageData) {
       alert('Please crop an image first!');
       return;
@@ -515,7 +515,95 @@ export function PhotoCropperCard({
     setIsCasting(true);
 
     try {
-      // Auto-download the cropped image first
+      // Convert base64 to blob
+      const response = await fetch(croppedImageData);
+      const blob = await response.blob();
+      
+      // Create FormData for image upload
+      const formData = new FormData();
+      formData.append('image', blob, 'kropped-image.png');
+      
+      // Upload image to temporary hosting service
+      // TODO: Replace with your actual image hosting endpoint
+      const uploadResponse = await fetch('/api/upload-image', {
+        method: 'POST',
+        body: formData,
+      });
+      
+      if (!uploadResponse.ok) {
+        throw new Error('Failed to upload image');
+      }
+      
+      const { imageUrl, publicId } = await uploadResponse.json();
+      
+      // Check if we're in a Mini App context and composeCast is available
+      if (typeof window !== 'undefined' && window.parent !== window) {
+        // We're in Mini App context - try to use composeCast
+        try {
+          // Import the SDK dynamically
+          const { sdk } = await import('@farcaster/frame-sdk');
+          
+          await sdk.actions.composeCast({
+            text: "Just kropped the perfect photo! 📸✨ Made with Kroppit",
+            embeds: [imageUrl],
+          });
+          
+          // Mark image as successfully cast (will be deleted after 1 hour)
+          fetch('/api/mark-cast-success', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ publicId })
+          }).catch(console.error);
+          
+          sendNotification({
+            type: 'success',
+            message: 'Cast created successfully! 🎉'
+          });
+        } catch (sdkError) {
+          console.log('SDK not available, falling back to URL method');
+          // Fall back to URL method
+          const shareText = "Just kropped the perfect photo! 📸✨ Made with Kroppit";
+          const shareUrl = `https://warpcast.com/~/compose?text=${encodeURIComponent(shareText)}&embeds[]=${encodeURIComponent(imageUrl)}`;
+          openUrl(shareUrl);
+          
+          // Mark as successful since user is taken to compose (assume they'll cast)
+          fetch('/api/mark-cast-success', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ publicId })
+          }).catch(console.error);
+          
+          sendNotification({
+            type: 'success',
+            message: 'Opening Farcaster with your image! 🎉'
+          });
+        }
+      } else {
+        // Not in Mini App context - use URL method
+        const shareText = "Just kropped the perfect photo! 📸✨ Made with Kroppit";
+        const shareUrl = `https://warpcast.com/~/compose?text=${encodeURIComponent(shareText)}&embeds[]=${encodeURIComponent(imageUrl)}`;
+        openUrl(shareUrl);
+        
+        // Mark as successful since user is taken to compose (assume they'll cast)
+        fetch('/api/mark-cast-success', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ publicId })
+        }).catch(console.error);
+        
+        sendNotification({
+          type: 'success',
+          message: 'Opening Farcaster with your image! 🎉'
+        });
+      }
+    } catch (error) {
+      console.error('Failed to cast to Farcaster:', error);
+      sendNotification({
+        type: 'error',
+        message: 'Failed to cast. Using fallback method...'
+      });
+      
+      // Fallback: download + manual upload
       const link = document.createElement('a');
       link.download = 'kropped-image.png';
       link.href = croppedImageData;
@@ -523,24 +611,9 @@ export function PhotoCropperCard({
       link.click();
       document.body.removeChild(link);
       
-      // Open Farcaster compose with pre-filled text
       const shareText = "Just kropped the perfect photo! 📸✨ Made with Kroppit\n\n(Upload the downloaded image to complete your cast)";
       const shareUrl = `https://warpcast.com/~/compose?text=${encodeURIComponent(shareText)}`;
-      
-      // Use MiniKit's openUrl for better integration
       openUrl(shareUrl);
-      
-      // Send success notification
-      sendNotification({
-        type: 'success',
-        message: 'Image downloaded! Complete your cast in Farcaster 🎉'
-      });
-    } catch (error) {
-      console.error('Failed to prepare cast:', error);
-      sendNotification({
-        type: 'error',
-        message: 'Failed to prepare cast. Please try again.'
-      });
     } finally {
       setIsCasting(false);
     }
@@ -1018,14 +1091,14 @@ export function PhotoCropperCard({
               Download
             </Button>
             <Button
-              onClick={shareToFarcaster}
+              onClick={castToFarcaster}
               variant="outline"
               size="sm"
               className="flex-1"
               disabled={isCasting}
               icon={<Icon name="star" size="sm" />}
             >
-              {isCasting ? 'Preparing...' : 'Share to Farcaster'}
+              {isCasting ? 'Casting...' : 'Cast to Farcaster'}
             </Button>
           </div>
         )}
