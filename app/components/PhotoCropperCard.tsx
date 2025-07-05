@@ -37,6 +37,7 @@ export function PhotoCropperCard({
   const [isDragOver, setIsDragOver] = useState(false);
   const [isDraggingCrop, setIsDraggingCrop] = useState(false);
   const [cropShape, setCropShape] = useState<'rectangle' | 'circle'>('rectangle');
+  const [showCroppedResult, setShowCroppedResult] = useState(false);
   
   // Use refs for dragging state to avoid stale closure issues
   const isDraggingCropRef = useRef(false);
@@ -470,8 +471,39 @@ export function PhotoCropperCard({
     
     setCroppedImageData(imageData);
     setShowPreview(true);
+    setShowCroppedResult(true);
     setIsProcessing(false);
     console.log('✅ Crop operation completed!');
+    
+    // Show cropped result on main canvas
+    const mainCanvas = canvasRef.current;
+    if (mainCanvas) {
+      const mainCtx = mainCanvas.getContext('2d');
+      if (mainCtx) {
+        // Calculate display dimensions to fit canvas while maintaining aspect ratio
+        const maxWidth = mainCanvas.width;
+        const maxHeight = mainCanvas.height;
+        const aspectRatio = canvas.width / canvas.height;
+        
+        let displayWidth = maxWidth;
+        let displayHeight = maxWidth / aspectRatio;
+        
+        if (displayHeight > maxHeight) {
+          displayHeight = maxHeight;
+          displayWidth = maxHeight * aspectRatio;
+        }
+        
+        // Center the cropped image
+        const x = (maxWidth - displayWidth) / 2;
+        const y = (maxHeight - displayHeight) / 2;
+        
+        // Clear main canvas and draw cropped result
+        mainCtx.clearRect(0, 0, mainCanvas.width, mainCanvas.height);
+        mainCtx.drawImage(canvas, x, y, displayWidth, displayHeight);
+        
+        console.log('✅ Cropped result displayed on main canvas');
+      }
+    }
   }, [image, cropData, scale, cropShape]);
 
   // Download cropped image
@@ -501,12 +533,73 @@ export function PhotoCropperCard({
     }, 'image/png');
   }, [croppedImageData, sendNotification]);
 
+  // Upload image to temporary hosting
+  const uploadImageToHost = useCallback(async (imageData: string): Promise<string | null> => {
+    try {
+      // Convert base64 to blob
+      const response = await fetch(imageData);
+      const blob = await response.blob();
+      
+      // Upload to Cloudinary (free tier)
+      const formData = new FormData();
+      formData.append('file', blob);
+      formData.append('upload_preset', 'kroppit_uploads'); // Cloudinary unsigned preset
+      formData.append('folder', 'kroppit');
+      
+      const uploadResponse = await fetch(
+        'https://api.cloudinary.com/v1_1/demo/image/upload', // Using demo cloud for now
+        {
+          method: 'POST',
+          body: formData,
+        }
+      );
+      
+      if (!uploadResponse.ok) {
+        throw new Error('Upload failed');
+      }
+      
+      const result = await uploadResponse.json();
+      return result.secure_url;
+    } catch (error) {
+      console.error('Image upload failed:', error);
+      sendNotification({
+        title: '❌ Upload Failed',
+        body: 'Could not upload image. Try downloading instead.'
+      });
+      return null;
+    }
+  }, [sendNotification]);
+
   // Share to Farcaster
-  const shareToFarcaster = useCallback(() => {
-    const shareText = "Just kropped a perfect photo! 📸 Try Kroppit - the easiest photo crop tool for Farcaster:";
-    const shareUrl = `https://warpcast.com/~/compose?text=${encodeURIComponent(shareText)}`;
-    openUrl(shareUrl);
-  }, [openUrl]);
+  const shareToFarcaster = useCallback(async () => {
+    if (!croppedImageData) {
+      sendNotification({
+        title: '❌ No Image',
+        body: 'Please crop an image first!'
+      });
+      return;
+    }
+
+    setIsProcessing(true);
+    
+    try {
+      // Upload image and get URL
+      const imageUrl = await uploadImageToHost(croppedImageData);
+      
+      if (imageUrl) {
+        const shareText = "Just kropped a perfect photo! 📸 Try Kroppit - the easiest photo crop tool for Farcaster:";
+        const shareUrl = `https://warpcast.com/~/compose?text=${encodeURIComponent(shareText)}&embeds[]=${encodeURIComponent(imageUrl)}`;
+        openUrl(shareUrl);
+        
+        sendNotification({
+          title: '🚀 Ready to Share!',
+          body: 'Opening Farcaster with your cropped image.'
+        });
+      }
+    } finally {
+      setIsProcessing(false);
+    }
+  }, [croppedImageData, uploadImageToHost, openUrl, sendNotification]);
 
   // Set crop size
   const setCropSize = useCallback((size: 'square' | 'landscape' | 'portrait' | 'circle') => {
@@ -673,8 +766,8 @@ export function PhotoCropperCard({
               />
               
               
-              {/* Draggable crop area */}
-              {cropData.width > 0 && cropData.height > 0 && (
+              {/* Draggable crop area - hide when showing result */}
+              {cropData.width > 0 && cropData.height > 0 && !showCroppedResult && (
                 <div
                   className={`absolute border-2 border-white shadow-lg cursor-move transition-all ${cropShape === 'circle' ? 'rounded-full' : ''}`}
                   style={{
@@ -858,8 +951,8 @@ export function PhotoCropperCard({
                 </div>
               )}
               
-              {/* Overlay to show grayed out areas - only when not dragging */}
-              {cropData.width > 0 && cropData.height > 0 && !isDraggingCrop && (
+              {/* Overlay to show grayed out areas - only when not dragging and not showing result */}
+              {cropData.width > 0 && cropData.height > 0 && !isDraggingCrop && !showCroppedResult && (
                 <>
                   {cropShape === 'circle' ? (
                     /* Circle overlay - everything except the circle */
@@ -985,8 +1078,9 @@ export function PhotoCropperCard({
               size="sm"
               className="flex-1"
               icon={<Icon name="star" size="sm" />}
+              disabled={isProcessing}
             >
-              Share
+              {isProcessing ? 'Uploading...' : 'Share'}
             </Button>
           </div>
         )}
@@ -999,6 +1093,7 @@ export function PhotoCropperCard({
               setImage(null);
               setShowPreview(false);
               setCroppedImageData(null);
+              setShowCroppedResult(false);
             }}
             variant="ghost"
             size="sm"
