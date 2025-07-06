@@ -691,11 +691,21 @@ export function PhotoCropperCard({
   // Reset crop
   const resetCrop = useCallback(() => {
     if (image) {
+      // Reset visual state first
+      setShowCroppedResult(false);
+      setShowPreview(false);
+      setCroppedImageData(null);
+      
+      // Redraw original image on canvas
+      const canvas = canvasRef.current;
+      if (canvas) {
+        drawImage(image, canvas);
+      }
+      
+      // Reset crop area
       initializeCropArea(image);
     }
-    setShowPreview(false);
-    setCroppedImageData(null);
-  }, [image, initializeCropArea]);
+  }, [image, initializeCropArea, drawImage]);
 
   // Open file picker
   const openFilePicker = useCallback(() => {
@@ -721,9 +731,6 @@ export function PhotoCropperCard({
               }
             `}
           >
-            <div className={`text-3xl mb-3 transition-transform duration-200 ${isDragOver ? 'scale-110' : ''}`}>
-              {isDragOver ? '📁' : '📸'}
-            </div>
             <div className="text-[var(--app-foreground)] mb-2">
               <p className="font-medium">
                 {isDragOver ? 'Drop your photo here!' : 'Upload your photo'}

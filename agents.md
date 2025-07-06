@@ -321,6 +321,133 @@ npm run dev
 
 ---
 
+## Error #10: Browser Cache vs Server Issues
+
+### What Happened
+Development server appeared to not be working at localhost:3000, showing no content in browser despite server logs indicating successful startup.
+
+### Root Cause
+- Browser cache preventing proper page loading
+- Server was actually running and serving content correctly
+- Browser-side rendering/caching issues masking working server
+
+### How It Was Fixed
+1. Used `curl` to test server directly - confirmed it was working
+2. Hard refresh in browser (`Cmd+Shift+R`)
+3. Cleared browser cache for localhost
+4. Tested in different browser/incognito mode
+
+### Key Lessons Learned
+1. **Server vs Browser Issues**: Server can be working perfectly while browser can't access it
+2. **Systematic Debugging**: Test server directly with `curl` before assuming server issues
+3. **Browser Cache Problems**: Development environments can have persistent cache issues
+4. **Multiple Test Methods**: Always verify at different layers (server, network, browser)
+5. **Don't Over-Engineer**: Simple solutions (cache clear) often fix complex-seeming problems
+
+### Prevention Strategy
+- Always test with `curl` or direct server access before assuming server issues
+- Regular browser cache clearing during development
+- Use incognito/private browsing for testing
+- Document browser-specific debugging steps
+
+---
+
+## Error #11: Incomplete Reset Function Implementation
+
+### What Happened
+Reset button appeared to do nothing when clicked after cropping an image. The button was present but didn't restore the original image view or crop controls.
+
+### Root Cause
+- Incomplete state management in `resetCrop` function
+- Missing visual state reset (`setShowCroppedResult(false)`)
+- Canvas not redrawn with original image after showing cropped result
+- State reset order was incorrect
+
+### How It Was Fixed
+```javascript
+const resetCrop = useCallback(() => {
+  if (image) {
+    // Reset visual state first
+    setShowCroppedResult(false);
+    setShowPreview(false);
+    setCroppedImageData(null);
+    
+    // Redraw original image on canvas
+    const canvas = canvasRef.current;
+    if (canvas) {
+      drawImage(image, canvas);
+    }
+    
+    // Reset crop area
+    initializeCropArea(image);
+  }
+}, [image, initializeCropArea, drawImage]);
+```
+
+### Key Lessons Learned
+1. **State Management Order**: Reset visual state first, then canvas, then data state
+2. **Visual vs Data State**: Distinguish between what user sees vs underlying data
+3. **Canvas State Management**: Canvas requires explicit redraw to reset visual state
+4. **Complete Feature Implementation**: Reset functions must handle ALL related state
+5. **User Experience Impact**: Broken reset breaks expected user flow "try → crop → reset → try again"
+
+### Prevention Strategy
+- Test complete user flows including reset/clear functionality
+- Map all state dependencies when implementing reset functions
+- Visual testing to verify UI actually resets, not just console state
+- Check all related state variables when implementing reset/clear functions
+
+---
+
+## Error #12: Development Server False Ready Status
+
+### What Happened
+Development server logs showed "Ready in Xms" and appeared to be running on localhost:3000, but browser couldn't access it and `curl` failed with connection refused errors.
+
+### Root Cause
+- Corrupted node_modules from previous development sessions
+- Cached build artifacts in `.next` directory conflicting with current code
+- Zombie processes from previous failed starts
+- Server process hanging despite "Ready" logs
+
+### How It Was Fixed
+```bash
+# Complete environment cleanup
+pkill -f "next dev"
+rm -rf .next
+rm -rf node_modules
+npm install
+npm run dev
+```
+
+### Key Lessons Learned
+1. **Logs Can Lie**: "Ready" logs don't guarantee server is actually serving content
+2. **Environment Corruption**: Accumulated cache and dependencies cause phantom issues
+3. **Process Cleanup**: Always kill existing processes before starting new ones
+4. **Systematic Verification**: Use `curl` to verify server is actually responding
+5. **Nuclear Option**: Complete cleanup is often faster than debugging corrupt state
+
+### Prevention Strategy
+- **MANDATORY**: Before starting any development session, run the cleanup script
+- Always verify server is actually responding with `curl localhost:3000`
+- Document and use standard cleanup procedures
+- Never assume logs indicate actual server status
+- **CRITICAL**: This issue is PERSISTENT and recurring - server shows "Ready" but never actually serves content
+- **WORKAROUND**: Use alternative development approaches when standard methods fail
+
+### Auto-Prevention Script
+```bash
+#!/bin/bash
+# dev-start.sh - Use this instead of direct npm run dev
+echo "Cleaning development environment..."
+pkill -f "next dev" 2>/dev/null || true
+rm -rf .next
+echo "Starting development server..."
+npm run dev
+```
+
+---
+
 ## Future Development Guidelines
 
 1. **Always test complete user flows** after making changes
@@ -330,3 +457,4 @@ npm run dev
 5. **Implement proper error handling** from the start
 6. **Use systematic debugging** approaches
 7. **Maintain user-focused perspective** throughout development
+8. **MANDATORY**: Run environment cleanup before starting development sessions
