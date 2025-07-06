@@ -12,6 +12,16 @@ const nextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
+
+  async redirects() {
+    return [
+      {
+        source: '/.well-known/farcaster.json',
+        destination: 'https://api.farcaster.xyz/miniapps/hosted-manifest/0197e1d9-9548-1bd5-3a9d-363e14b1ddb7',
+        permanent: false,
+      },
+    ]
+  },
 };
 
 export default nextConfig;
