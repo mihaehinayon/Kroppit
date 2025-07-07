@@ -1088,7 +1088,11 @@ export function PhotoCropperCard({
 
   // Reset crop
   const resetCrop = useCallback(() => {
+    console.log('🔄 Reset button clicked');
+    
     if (image) {
+      console.log('✅ Image exists, proceeding with reset');
+      
       // Reset visual state first
       setShowCroppedResult(false);
       setShowPreview(false);
@@ -1096,15 +1100,24 @@ export function PhotoCropperCard({
       
       // Reset crop shape to default rectangle
       setCropShape('rectangle');
+      console.log('🔲 Reset crop shape to rectangle');
       
       // Redraw original image on canvas
       const canvas = canvasRef.current;
       if (canvas) {
+        console.log('🎨 Redrawing original image on canvas');
         drawImage(image, canvas);
+      } else {
+        console.log('❌ Canvas not found for redraw');
       }
       
       // Reset crop area
+      console.log('📐 Reinitializing crop area');
       initializeCropArea(image);
+      
+      console.log('✅ Reset complete');
+    } else {
+      console.log('❌ No image to reset');
     }
   }, [image, initializeCropArea, drawImage]);
 
