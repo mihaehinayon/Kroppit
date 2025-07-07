@@ -1325,10 +1325,39 @@ export function PhotoCropperCard({
         {showPreview && (
           <Button
             onClick={() => {
+              // Reset all state
               setImage(null);
               setShowPreview(false);
               setCroppedImageData(null);
               setShowCroppedResult(false);
+              setCropData({ x: 0, y: 0, width: 0, height: 0 });
+              setIsProcessing(false);
+              setIsDraggingCrop(false);
+              setCropShape('rectangle');
+              setScale(1);
+              
+              // Reset refs
+              isDraggingCropRef.current = false;
+              isResizingRef.current = false;
+              resizeHandleRef.current = '';
+              dragStartRef.current = { x: 0, y: 0 };
+              cropStartRef.current = { x: 0, y: 0, width: 0, height: 0 };
+              
+              // Clear file input to allow re-uploading the same file
+              if (fileInputRef.current) {
+                fileInputRef.current.value = '';
+              }
+              
+              // Cancel any pending animation frames
+              if (animationFrameRef.current) {
+                cancelAnimationFrame(animationFrameRef.current);
+                animationFrameRef.current = null;
+              }
+              
+              // Immediately open file picker dialog
+              setTimeout(() => {
+                fileInputRef.current?.click();
+              }, 100);
             }}
             variant="ghost"
             size="sm"
