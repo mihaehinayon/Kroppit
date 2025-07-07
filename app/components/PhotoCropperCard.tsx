@@ -660,13 +660,49 @@ export function PhotoCropperCard({
 
     console.log('Starting download process...');
 
-    // Detect mobile browser
+    // Detect environment and device
     const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+    const isFarcaster = window.parent !== window || window.location !== window.parent.location;
     
-    console.log('Device detection - Mobile:', isMobile, 'iOS:', isIOS);
+    console.log('Environment detection - Mobile:', isMobile, 'Farcaster:', isFarcaster);
 
-    // For mobile devices, especially iOS, use a different approach
+    // Farcaster Mini App environment - use MiniKit openUrl
+    if (isFarcaster) {
+      try {
+        // Create a data URL that opens directly in browser
+        const dataUrl = croppedImageData;
+        
+        // Use MiniKit openUrl to open the image data URL in external browser
+        openUrl(dataUrl);
+        
+        sendNotification({
+          title: '📱 Image Opening!',
+          body: 'Image will open in your browser where you can save it.'
+        });
+        
+        console.log('Farcaster: Used openUrl with data URL');
+        return;
+      } catch (error) {
+        console.error('Farcaster openUrl failed:', error);
+        
+        // Fallback: Try to copy image data to clipboard
+        try {
+          navigator.clipboard.writeText(croppedImageData).then(() => {
+            sendNotification({
+              title: '📋 Image Copied!',
+              body: 'Image data copied to clipboard. Paste in browser to view/save.'
+            });
+          });
+          return;
+        } catch (clipboardError) {
+          console.error('Clipboard fallback failed:', clipboardError);
+          alert('Download not available in Farcaster environment. Try opening the app in your browser.');
+          return;
+        }
+      }
+    }
+
+    // Regular mobile browser
     if (isMobile) {
       try {
         // For mobile: Open image in new tab for long-press save
@@ -790,7 +826,7 @@ export function PhotoCropperCard({
         throw new Error('No canvas available');
       }
     }
-  }, [croppedImageData, sendNotification]);
+  }, [croppedImageData, sendNotification, openUrl]);
 
   // Upload image to temporary hosting
   const uploadImageToHost = useCallback(async (imageData: string): Promise<string | null> => {
