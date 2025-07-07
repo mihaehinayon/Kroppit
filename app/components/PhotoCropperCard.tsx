@@ -46,17 +46,33 @@ export function PhotoCropperCard({
   const dragStartRef = useRef({ x: 0, y: 0 });
   const cropStartRef = useRef({ x: 0, y: 0, width: 0, height: 0 });
 
-  // Global mouse event handlers for dragging and resizing
+  // Global mouse and touch event handlers for dragging and resizing
   useEffect(() => {
-    const handleGlobalMouseMove = (e: MouseEvent) => {
+    const getEventPosition = (e: MouseEvent | TouchEvent) => {
       const canvas = canvasRef.current;
-      if (!canvas) return;
+      if (!canvas) return { x: 0, y: 0 };
       
       const canvasRect = canvas.getBoundingClientRect();
-      const pos = {
-        x: e.clientX - canvasRect.left,
-        y: e.clientY - canvasRect.top
+      let clientX, clientY;
+      
+      if ('touches' in e && e.touches.length > 0) {
+        clientX = e.touches[0].clientX;
+        clientY = e.touches[0].clientY;
+      } else if ('clientX' in e) {
+        clientX = e.clientX;
+        clientY = e.clientY;
+      } else {
+        return { x: 0, y: 0 };
+      }
+      
+      return {
+        x: clientX - canvasRect.left,
+        y: clientY - canvasRect.top
       };
+    };
+
+    const handleGlobalMove = (e: MouseEvent | TouchEvent) => {
+      const pos = getEventPosition(e);
 
       if (isDraggingCropRef.current) {
         const deltaX = pos.x - dragStartRef.current.x;
@@ -217,25 +233,32 @@ export function PhotoCropperCard({
       }
     };
 
-    const handleGlobalMouseUp = () => {
+    const handleGlobalEnd = () => {
       if (isDraggingCropRef.current) {
-        console.log('🎯 Global mouse up - stopping drag');
+        console.log('🎯 Global end - stopping drag');
         isDraggingCropRef.current = false;
         setIsDraggingCrop(false);
       }
       if (isResizingRef.current) {
-        console.log('🎯 Global mouse up - stopping resize');
+        console.log('🎯 Global end - stopping resize');
         isResizingRef.current = false;
         resizeHandleRef.current = '';
       }
     };
 
-    document.addEventListener('mousemove', handleGlobalMouseMove);
-    document.addEventListener('mouseup', handleGlobalMouseUp);
+    // Add both mouse and touch event listeners
+    document.addEventListener('mousemove', handleGlobalMove);
+    document.addEventListener('mouseup', handleGlobalEnd);
+    document.addEventListener('touchmove', handleGlobalMove, { passive: false });
+    document.addEventListener('touchend', handleGlobalEnd);
+    document.addEventListener('touchcancel', handleGlobalEnd);
 
     return () => {
-      document.removeEventListener('mousemove', handleGlobalMouseMove);
-      document.removeEventListener('mouseup', handleGlobalMouseUp);
+      document.removeEventListener('mousemove', handleGlobalMove);
+      document.removeEventListener('mouseup', handleGlobalEnd);
+      document.removeEventListener('touchmove', handleGlobalMove);
+      document.removeEventListener('touchend', handleGlobalEnd);
+      document.removeEventListener('touchcancel', handleGlobalEnd);
     };
   }, [cropData]);
 
@@ -778,6 +801,70 @@ export function PhotoCropperCard({
     }
   }, [croppedImageData, uploadImageToHost, openUrl, sendNotification]);
 
+  // Unified handler for both mouse and touch events
+  const handleStartDrag = useCallback((e: React.MouseEvent | React.TouchEvent) => {
+    console.log('🎯 Starting drag');
+    e.preventDefault();
+    e.stopPropagation();
+    
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    
+    const canvasRect = canvas.getBoundingClientRect();
+    let clientX, clientY;
+    
+    if ('touches' in e && e.touches.length > 0) {
+      clientX = e.touches[0].clientX;
+      clientY = e.touches[0].clientY;
+    } else if ('clientX' in e) {
+      clientX = e.clientX;
+      clientY = e.clientY;
+    } else {
+      return;
+    }
+    
+    const pos = {
+      x: clientX - canvasRect.left,
+      y: clientY - canvasRect.top
+    };
+    
+    isDraggingCropRef.current = true;
+    setIsDraggingCrop(true);
+    dragStartRef.current = pos;
+    cropStartRef.current = { x: cropData.x, y: cropData.y, width: cropData.width, height: cropData.height };
+    
+    console.log('🎯 Drag started at:', pos);
+  }, [cropData]);
+
+  // Unified handler for resize start
+  const handleStartResize = useCallback((e: React.MouseEvent | React.TouchEvent, handle: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    
+    const canvasRect = canvas.getBoundingClientRect();
+    let clientX, clientY;
+    
+    if ('touches' in e && e.touches.length > 0) {
+      clientX = e.touches[0].clientX;
+      clientY = e.touches[0].clientY;
+    } else if ('clientX' in e) {
+      clientX = e.clientX;
+      clientY = e.clientY;
+    } else {
+      return;
+    }
+    
+    const pos = { x: clientX - canvasRect.left, y: clientY - canvasRect.top };
+    
+    isResizingRef.current = true;
+    resizeHandleRef.current = handle;
+    dragStartRef.current = pos;
+    cropStartRef.current = { x: cropData.x, y: cropData.y, width: cropData.width, height: cropData.height };
+  }, [cropData]);
+
   // Set crop size
   const setCropSize = useCallback((size: 'square' | 'landscape' | 'portrait' | 'circle') => {
     const canvas = canvasRef.current;
@@ -965,27 +1052,8 @@ export function PhotoCropperCard({
                     zIndex: 1000,
                     backgroundColor: 'transparent'
                   }}
-                  onMouseDown={(e) => {
-                    console.log('🎯 Starting drag');
-                    e.preventDefault();
-                    e.stopPropagation();
-                    
-                    const canvas = canvasRef.current;
-                    if (!canvas) return;
-                    
-                    const canvasRect = canvas.getBoundingClientRect();
-                    const pos = {
-                      x: e.clientX - canvasRect.left,
-                      y: e.clientY - canvasRect.top
-                    };
-                    
-                    isDraggingCropRef.current = true;
-                    setIsDraggingCrop(true);
-                    dragStartRef.current = pos;
-                    cropStartRef.current = { x: cropData.x, y: cropData.y, width: cropData.width, height: cropData.height };
-                    
-                    console.log('🎯 Drag started at:', pos);
-                  }}
+                  onMouseDown={handleStartDrag}
+                  onTouchStart={handleStartDrag}
                 >
 
                   {/* Corner resize handles */}
@@ -994,74 +1062,26 @@ export function PhotoCropperCard({
                       <div
                         className="absolute w-3 h-3 bg-white border border-gray-400 cursor-nw-resize"
                         style={{ left: '-6px', top: '-6px', zIndex: 1001 }}
-                        onMouseDown={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          const canvas = canvasRef.current;
-                          if (!canvas) return;
-                          
-                          const canvasRect = canvas.getBoundingClientRect();
-                          const pos = { x: e.clientX - canvasRect.left, y: e.clientY - canvasRect.top };
-                          
-                          isResizingRef.current = true;
-                          resizeHandleRef.current = 'nw';
-                          dragStartRef.current = pos;
-                          cropStartRef.current = { x: cropData.x, y: cropData.y, width: cropData.width, height: cropData.height };
-                        }}
+                        onMouseDown={(e) => handleStartResize(e, 'nw')}
+                        onTouchStart={(e) => handleStartResize(e, 'nw')}
                       />
                       <div
                         className="absolute w-3 h-3 bg-white border border-gray-400 cursor-ne-resize"
                         style={{ right: '-6px', top: '-6px', zIndex: 1001 }}
-                        onMouseDown={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          const canvas = canvasRef.current;
-                          if (!canvas) return;
-                          
-                          const canvasRect = canvas.getBoundingClientRect();
-                          const pos = { x: e.clientX - canvasRect.left, y: e.clientY - canvasRect.top };
-                          
-                          isResizingRef.current = true;
-                          resizeHandleRef.current = 'ne';
-                          dragStartRef.current = pos;
-                          cropStartRef.current = { x: cropData.x, y: cropData.y, width: cropData.width, height: cropData.height };
-                        }}
+                        onMouseDown={(e) => handleStartResize(e, 'ne')}
+                        onTouchStart={(e) => handleStartResize(e, 'ne')}
                       />
                       <div
                         className="absolute w-3 h-3 bg-white border border-gray-400 cursor-sw-resize"
                         style={{ left: '-6px', bottom: '-6px', zIndex: 1001 }}
-                        onMouseDown={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          const canvas = canvasRef.current;
-                          if (!canvas) return;
-                          
-                          const canvasRect = canvas.getBoundingClientRect();
-                          const pos = { x: e.clientX - canvasRect.left, y: e.clientY - canvasRect.top };
-                          
-                          isResizingRef.current = true;
-                          resizeHandleRef.current = 'sw';
-                          dragStartRef.current = pos;
-                          cropStartRef.current = { x: cropData.x, y: cropData.y, width: cropData.width, height: cropData.height };
-                        }}
+                        onMouseDown={(e) => handleStartResize(e, 'sw')}
+                        onTouchStart={(e) => handleStartResize(e, 'sw')}
                       />
                       <div
                         className="absolute w-3 h-3 bg-white border border-gray-400 cursor-se-resize"
                         style={{ right: '-6px', bottom: '-6px', zIndex: 1001 }}
-                        onMouseDown={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          const canvas = canvasRef.current;
-                          if (!canvas) return;
-                          
-                          const canvasRect = canvas.getBoundingClientRect();
-                          const pos = { x: e.clientX - canvasRect.left, y: e.clientY - canvasRect.top };
-                          
-                          isResizingRef.current = true;
-                          resizeHandleRef.current = 'se';
-                          dragStartRef.current = pos;
-                          cropStartRef.current = { x: cropData.x, y: cropData.y, width: cropData.width, height: cropData.height };
-                        }}
+                        onMouseDown={(e) => handleStartResize(e, 'se')}
+                        onTouchStart={(e) => handleStartResize(e, 'se')}
                       />
                     </>
                   )}
