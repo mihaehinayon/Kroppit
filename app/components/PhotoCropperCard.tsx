@@ -119,6 +119,47 @@ export function PhotoCropperCard({
           case 'e': // right edge
             newCrop.width = Math.max(20, startCrop.width + deltaX);
             break;
+          
+          // Circle resize handles - maintain 1:1 aspect ratio
+          case 'circle-nw': // circle top-left
+            {
+              const avgDelta = (deltaX + deltaY) / 2;
+              const newSize = Math.max(20, Math.min(startCrop.width - avgDelta, startCrop.height - avgDelta));
+              const deltaSize = startCrop.width - newSize;
+              newCrop.x = Math.max(0, startCrop.x + deltaSize);
+              newCrop.y = Math.max(0, startCrop.y + deltaSize);
+              newCrop.width = newSize;
+              newCrop.height = newSize;
+            }
+            break;
+          case 'circle-ne': // circle top-right
+            {
+              const avgDelta = (deltaX - deltaY) / 2;
+              const newSize = Math.max(20, startCrop.width + avgDelta);
+              const deltaSize = newSize - startCrop.height;
+              newCrop.y = Math.max(0, startCrop.y - deltaSize);
+              newCrop.width = newSize;
+              newCrop.height = newSize;
+            }
+            break;
+          case 'circle-sw': // circle bottom-left
+            {
+              const avgDelta = (-deltaX + deltaY) / 2;
+              const newSize = Math.max(20, startCrop.width + avgDelta);
+              const deltaSize = newSize - startCrop.width;
+              newCrop.x = Math.max(0, startCrop.x - deltaSize);
+              newCrop.width = newSize;
+              newCrop.height = newSize;
+            }
+            break;
+          case 'circle-se': // circle bottom-right
+            {
+              const avgDelta = (deltaX + deltaY) / 2;
+              const newSize = Math.max(20, startCrop.width + avgDelta);
+              newCrop.width = newSize;
+              newCrop.height = newSize;
+            }
+            break;
         }
 
         // Ensure crop area doesn't exceed canvas bounds
@@ -904,7 +945,7 @@ export function PhotoCropperCard({
                   }}
                 >
 
-                  {/* Corner resize handles - only for rectangle crops */}
+                  {/* Corner resize handles */}
                   {cropShape === 'rectangle' && (
                     <>
                       <div
@@ -975,6 +1016,84 @@ export function PhotoCropperCard({
                           
                           isResizingRef.current = true;
                           resizeHandleRef.current = 'se';
+                          dragStartRef.current = pos;
+                          cropStartRef.current = { x: cropData.x, y: cropData.y, width: cropData.width, height: cropData.height };
+                        }}
+                      />
+                    </>
+                  )}
+
+                  {/* Circle resize handles - only corner handles for proportional resize */}
+                  {cropShape === 'circle' && (
+                    <>
+                      <div
+                        className="absolute w-3 h-3 bg-white border border-gray-400 rounded-full cursor-nw-resize"
+                        style={{ left: '-6px', top: '-6px', zIndex: 1001 }}
+                        onMouseDown={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          const canvas = canvasRef.current;
+                          if (!canvas) return;
+                          
+                          const canvasRect = canvas.getBoundingClientRect();
+                          const pos = { x: e.clientX - canvasRect.left, y: e.clientY - canvasRect.top };
+                          
+                          isResizingRef.current = true;
+                          resizeHandleRef.current = 'circle-nw';
+                          dragStartRef.current = pos;
+                          cropStartRef.current = { x: cropData.x, y: cropData.y, width: cropData.width, height: cropData.height };
+                        }}
+                      />
+                      <div
+                        className="absolute w-3 h-3 bg-white border border-gray-400 rounded-full cursor-ne-resize"
+                        style={{ right: '-6px', top: '-6px', zIndex: 1001 }}
+                        onMouseDown={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          const canvas = canvasRef.current;
+                          if (!canvas) return;
+                          
+                          const canvasRect = canvas.getBoundingClientRect();
+                          const pos = { x: e.clientX - canvasRect.left, y: e.clientY - canvasRect.top };
+                          
+                          isResizingRef.current = true;
+                          resizeHandleRef.current = 'circle-ne';
+                          dragStartRef.current = pos;
+                          cropStartRef.current = { x: cropData.x, y: cropData.y, width: cropData.width, height: cropData.height };
+                        }}
+                      />
+                      <div
+                        className="absolute w-3 h-3 bg-white border border-gray-400 rounded-full cursor-sw-resize"
+                        style={{ left: '-6px', bottom: '-6px', zIndex: 1001 }}
+                        onMouseDown={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          const canvas = canvasRef.current;
+                          if (!canvas) return;
+                          
+                          const canvasRect = canvas.getBoundingClientRect();
+                          const pos = { x: e.clientX - canvasRect.left, y: e.clientY - canvasRect.top };
+                          
+                          isResizingRef.current = true;
+                          resizeHandleRef.current = 'circle-sw';
+                          dragStartRef.current = pos;
+                          cropStartRef.current = { x: cropData.x, y: cropData.y, width: cropData.width, height: cropData.height };
+                        }}
+                      />
+                      <div
+                        className="absolute w-3 h-3 bg-white border border-gray-400 rounded-full cursor-se-resize"
+                        style={{ right: '-6px', bottom: '-6px', zIndex: 1001 }}
+                        onMouseDown={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          const canvas = canvasRef.current;
+                          if (!canvas) return;
+                          
+                          const canvasRect = canvas.getBoundingClientRect();
+                          const pos = { x: e.clientX - canvasRect.left, y: e.clientY - canvasRect.top };
+                          
+                          isResizingRef.current = true;
+                          resizeHandleRef.current = 'circle-se';
                           dragStartRef.current = pos;
                           cropStartRef.current = { x: cropData.x, y: cropData.y, width: cropData.width, height: cropData.height };
                         }}
