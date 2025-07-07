@@ -789,6 +789,9 @@ export function PhotoCropperCard({
       setShowPreview(false);
       setCroppedImageData(null);
       
+      // Reset crop shape to default rectangle
+      setCropShape('rectangle');
+      
       // Redraw original image on canvas
       const canvas = canvasRef.current;
       if (canvas) {
@@ -901,153 +904,161 @@ export function PhotoCropperCard({
                   }}
                 >
 
-                  {/* Corner resize handles */}
-                  <div
-                    className="absolute w-3 h-3 bg-white border border-gray-400 cursor-nw-resize"
-                    style={{ left: '-6px', top: '-6px', zIndex: 1001 }}
-                    onMouseDown={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      const canvas = canvasRef.current;
-                      if (!canvas) return;
-                      
-                      const canvasRect = canvas.getBoundingClientRect();
-                      const pos = { x: e.clientX - canvasRect.left, y: e.clientY - canvasRect.top };
-                      
-                      isResizingRef.current = true;
-                      resizeHandleRef.current = 'nw';
-                      dragStartRef.current = pos;
-                      cropStartRef.current = { x: cropData.x, y: cropData.y, width: cropData.width, height: cropData.height };
-                    }}
-                  />
-                  <div
-                    className="absolute w-3 h-3 bg-white border border-gray-400 cursor-ne-resize"
-                    style={{ right: '-6px', top: '-6px', zIndex: 1001 }}
-                    onMouseDown={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      const canvas = canvasRef.current;
-                      if (!canvas) return;
-                      
-                      const canvasRect = canvas.getBoundingClientRect();
-                      const pos = { x: e.clientX - canvasRect.left, y: e.clientY - canvasRect.top };
-                      
-                      isResizingRef.current = true;
-                      resizeHandleRef.current = 'ne';
-                      dragStartRef.current = pos;
-                      cropStartRef.current = { x: cropData.x, y: cropData.y, width: cropData.width, height: cropData.height };
-                    }}
-                  />
-                  <div
-                    className="absolute w-3 h-3 bg-white border border-gray-400 cursor-sw-resize"
-                    style={{ left: '-6px', bottom: '-6px', zIndex: 1001 }}
-                    onMouseDown={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      const canvas = canvasRef.current;
-                      if (!canvas) return;
-                      
-                      const canvasRect = canvas.getBoundingClientRect();
-                      const pos = { x: e.clientX - canvasRect.left, y: e.clientY - canvasRect.top };
-                      
-                      isResizingRef.current = true;
-                      resizeHandleRef.current = 'sw';
-                      dragStartRef.current = pos;
-                      cropStartRef.current = { x: cropData.x, y: cropData.y, width: cropData.width, height: cropData.height };
-                    }}
-                  />
-                  <div
-                    className="absolute w-3 h-3 bg-white border border-gray-400 cursor-se-resize"
-                    style={{ right: '-6px', bottom: '-6px', zIndex: 1001 }}
-                    onMouseDown={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      const canvas = canvasRef.current;
-                      if (!canvas) return;
-                      
-                      const canvasRect = canvas.getBoundingClientRect();
-                      const pos = { x: e.clientX - canvasRect.left, y: e.clientY - canvasRect.top };
-                      
-                      isResizingRef.current = true;
-                      resizeHandleRef.current = 'se';
-                      dragStartRef.current = pos;
-                      cropStartRef.current = { x: cropData.x, y: cropData.y, width: cropData.width, height: cropData.height };
-                    }}
-                  />
+                  {/* Corner resize handles - only for rectangle crops */}
+                  {cropShape === 'rectangle' && (
+                    <>
+                      <div
+                        className="absolute w-3 h-3 bg-white border border-gray-400 cursor-nw-resize"
+                        style={{ left: '-6px', top: '-6px', zIndex: 1001 }}
+                        onMouseDown={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          const canvas = canvasRef.current;
+                          if (!canvas) return;
+                          
+                          const canvasRect = canvas.getBoundingClientRect();
+                          const pos = { x: e.clientX - canvasRect.left, y: e.clientY - canvasRect.top };
+                          
+                          isResizingRef.current = true;
+                          resizeHandleRef.current = 'nw';
+                          dragStartRef.current = pos;
+                          cropStartRef.current = { x: cropData.x, y: cropData.y, width: cropData.width, height: cropData.height };
+                        }}
+                      />
+                      <div
+                        className="absolute w-3 h-3 bg-white border border-gray-400 cursor-ne-resize"
+                        style={{ right: '-6px', top: '-6px', zIndex: 1001 }}
+                        onMouseDown={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          const canvas = canvasRef.current;
+                          if (!canvas) return;
+                          
+                          const canvasRect = canvas.getBoundingClientRect();
+                          const pos = { x: e.clientX - canvasRect.left, y: e.clientY - canvasRect.top };
+                          
+                          isResizingRef.current = true;
+                          resizeHandleRef.current = 'ne';
+                          dragStartRef.current = pos;
+                          cropStartRef.current = { x: cropData.x, y: cropData.y, width: cropData.width, height: cropData.height };
+                        }}
+                      />
+                      <div
+                        className="absolute w-3 h-3 bg-white border border-gray-400 cursor-sw-resize"
+                        style={{ left: '-6px', bottom: '-6px', zIndex: 1001 }}
+                        onMouseDown={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          const canvas = canvasRef.current;
+                          if (!canvas) return;
+                          
+                          const canvasRect = canvas.getBoundingClientRect();
+                          const pos = { x: e.clientX - canvasRect.left, y: e.clientY - canvasRect.top };
+                          
+                          isResizingRef.current = true;
+                          resizeHandleRef.current = 'sw';
+                          dragStartRef.current = pos;
+                          cropStartRef.current = { x: cropData.x, y: cropData.y, width: cropData.width, height: cropData.height };
+                        }}
+                      />
+                      <div
+                        className="absolute w-3 h-3 bg-white border border-gray-400 cursor-se-resize"
+                        style={{ right: '-6px', bottom: '-6px', zIndex: 1001 }}
+                        onMouseDown={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          const canvas = canvasRef.current;
+                          if (!canvas) return;
+                          
+                          const canvasRect = canvas.getBoundingClientRect();
+                          const pos = { x: e.clientX - canvasRect.left, y: e.clientY - canvasRect.top };
+                          
+                          isResizingRef.current = true;
+                          resizeHandleRef.current = 'se';
+                          dragStartRef.current = pos;
+                          cropStartRef.current = { x: cropData.x, y: cropData.y, width: cropData.width, height: cropData.height };
+                        }}
+                      />
+                    </>
+                  )}
 
-                  {/* Edge resize handles */}
-                  <div
-                    className="absolute w-full h-1 cursor-n-resize"
-                    style={{ left: '0', top: '-3px', zIndex: 1001 }}
-                    onMouseDown={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      const canvas = canvasRef.current;
-                      if (!canvas) return;
-                      
-                      const canvasRect = canvas.getBoundingClientRect();
-                      const pos = { x: e.clientX - canvasRect.left, y: e.clientY - canvasRect.top };
-                      
-                      isResizingRef.current = true;
-                      resizeHandleRef.current = 'n';
-                      dragStartRef.current = pos;
-                      cropStartRef.current = { x: cropData.x, y: cropData.y, width: cropData.width, height: cropData.height };
-                    }}
-                  />
-                  <div
-                    className="absolute w-full h-1 cursor-s-resize"
-                    style={{ left: '0', bottom: '-3px', zIndex: 1001 }}
-                    onMouseDown={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      const canvas = canvasRef.current;
-                      if (!canvas) return;
-                      
-                      const canvasRect = canvas.getBoundingClientRect();
-                      const pos = { x: e.clientX - canvasRect.left, y: e.clientY - canvasRect.top };
-                      
-                      isResizingRef.current = true;
-                      resizeHandleRef.current = 's';
-                      dragStartRef.current = pos;
-                      cropStartRef.current = { x: cropData.x, y: cropData.y, width: cropData.width, height: cropData.height };
-                    }}
-                  />
-                  <div
-                    className="absolute w-1 h-full cursor-w-resize"
-                    style={{ left: '-3px', top: '0', zIndex: 1001 }}
-                    onMouseDown={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      const canvas = canvasRef.current;
-                      if (!canvas) return;
-                      
-                      const canvasRect = canvas.getBoundingClientRect();
-                      const pos = { x: e.clientX - canvasRect.left, y: e.clientY - canvasRect.top };
-                      
-                      isResizingRef.current = true;
-                      resizeHandleRef.current = 'w';
-                      dragStartRef.current = pos;
-                      cropStartRef.current = { x: cropData.x, y: cropData.y, width: cropData.width, height: cropData.height };
-                    }}
-                  />
-                  <div
-                    className="absolute w-1 h-full cursor-e-resize"
-                    style={{ right: '-3px', top: '0', zIndex: 1001 }}
-                    onMouseDown={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      const canvas = canvasRef.current;
-                      if (!canvas) return;
-                      
-                      const canvasRect = canvas.getBoundingClientRect();
-                      const pos = { x: e.clientX - canvasRect.left, y: e.clientY - canvasRect.top };
-                      
-                      isResizingRef.current = true;
-                      resizeHandleRef.current = 'e';
-                      dragStartRef.current = pos;
-                      cropStartRef.current = { x: cropData.x, y: cropData.y, width: cropData.width, height: cropData.height };
-                    }}
-                  />
+                  {/* Edge resize handles - only for rectangle crops */}
+                  {cropShape === 'rectangle' && (
+                    <>
+                      <div
+                        className="absolute w-full h-1 cursor-n-resize"
+                        style={{ left: '0', top: '-3px', zIndex: 1001 }}
+                        onMouseDown={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          const canvas = canvasRef.current;
+                          if (!canvas) return;
+                          
+                          const canvasRect = canvas.getBoundingClientRect();
+                          const pos = { x: e.clientX - canvasRect.left, y: e.clientY - canvasRect.top };
+                          
+                          isResizingRef.current = true;
+                          resizeHandleRef.current = 'n';
+                          dragStartRef.current = pos;
+                          cropStartRef.current = { x: cropData.x, y: cropData.y, width: cropData.width, height: cropData.height };
+                        }}
+                      />
+                      <div
+                        className="absolute w-full h-1 cursor-s-resize"
+                        style={{ left: '0', bottom: '-3px', zIndex: 1001 }}
+                        onMouseDown={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          const canvas = canvasRef.current;
+                          if (!canvas) return;
+                          
+                          const canvasRect = canvas.getBoundingClientRect();
+                          const pos = { x: e.clientX - canvasRect.left, y: e.clientY - canvasRect.top };
+                          
+                          isResizingRef.current = true;
+                          resizeHandleRef.current = 's';
+                          dragStartRef.current = pos;
+                          cropStartRef.current = { x: cropData.x, y: cropData.y, width: cropData.width, height: cropData.height };
+                        }}
+                      />
+                      <div
+                        className="absolute w-1 h-full cursor-w-resize"
+                        style={{ left: '-3px', top: '0', zIndex: 1001 }}
+                        onMouseDown={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          const canvas = canvasRef.current;
+                          if (!canvas) return;
+                          
+                          const canvasRect = canvas.getBoundingClientRect();
+                          const pos = { x: e.clientX - canvasRect.left, y: e.clientY - canvasRect.top };
+                          
+                          isResizingRef.current = true;
+                          resizeHandleRef.current = 'w';
+                          dragStartRef.current = pos;
+                          cropStartRef.current = { x: cropData.x, y: cropData.y, width: cropData.width, height: cropData.height };
+                        }}
+                      />
+                      <div
+                        className="absolute w-1 h-full cursor-e-resize"
+                        style={{ right: '-3px', top: '0', zIndex: 1001 }}
+                        onMouseDown={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          const canvas = canvasRef.current;
+                          if (!canvas) return;
+                          
+                          const canvasRect = canvas.getBoundingClientRect();
+                          const pos = { x: e.clientX - canvasRect.left, y: e.clientY - canvasRect.top };
+                          
+                          isResizingRef.current = true;
+                          resizeHandleRef.current = 'e';
+                          dragStartRef.current = pos;
+                          cropStartRef.current = { x: cropData.x, y: cropData.y, width: cropData.width, height: cropData.height };
+                        }}
+                      />
+                    </>
+                  )}
                 </div>
               )}
               
