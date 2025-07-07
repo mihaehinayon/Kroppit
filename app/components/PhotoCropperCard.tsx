@@ -121,41 +121,50 @@ export function PhotoCropperCard({
             break;
           
           // Circle resize handles - maintain 1:1 aspect ratio
-          case 'circle-nw': // circle top-left
+          case 'circle-nw': // circle top-left - resize from bottom-right anchor
             {
-              const avgDelta = (deltaX + deltaY) / 2;
-              const newSize = Math.max(20, Math.min(startCrop.width - avgDelta, startCrop.height - avgDelta));
-              const deltaSize = startCrop.width - newSize;
-              newCrop.x = Math.max(0, startCrop.x + deltaSize);
-              newCrop.y = Math.max(0, startCrop.y + deltaSize);
-              newCrop.width = newSize;
-              newCrop.height = newSize;
-            }
-            break;
-          case 'circle-ne': // circle top-right
-            {
-              const avgDelta = (deltaX - deltaY) / 2;
-              const newSize = Math.max(20, startCrop.width + avgDelta);
-              const deltaSize = newSize - startCrop.height;
+              // Use the maximum absolute delta to maintain circular shape
+              const sizeDelta = Math.max(Math.abs(deltaX), Math.abs(deltaY));
+              const direction = deltaX < 0 && deltaY < 0 ? 1 : -1; // Growing or shrinking
+              const newSize = Math.max(20, startCrop.width + (direction * sizeDelta));
+              const deltaSize = newSize - startCrop.width;
+              
+              newCrop.x = Math.max(0, startCrop.x - deltaSize);
               newCrop.y = Math.max(0, startCrop.y - deltaSize);
               newCrop.width = newSize;
               newCrop.height = newSize;
             }
             break;
-          case 'circle-sw': // circle bottom-left
+          case 'circle-ne': // circle top-right - resize from bottom-left anchor
             {
-              const avgDelta = (-deltaX + deltaY) / 2;
-              const newSize = Math.max(20, startCrop.width + avgDelta);
+              const sizeDelta = Math.max(Math.abs(deltaX), Math.abs(deltaY));
+              const direction = deltaX > 0 && deltaY < 0 ? 1 : -1;
+              const newSize = Math.max(20, startCrop.width + (direction * sizeDelta));
               const deltaSize = newSize - startCrop.width;
+              
+              newCrop.y = Math.max(0, startCrop.y - deltaSize);
+              newCrop.width = newSize;
+              newCrop.height = newSize;
+            }
+            break;
+          case 'circle-sw': // circle bottom-left - resize from top-right anchor
+            {
+              const sizeDelta = Math.max(Math.abs(deltaX), Math.abs(deltaY));
+              const direction = deltaX < 0 && deltaY > 0 ? 1 : -1;
+              const newSize = Math.max(20, startCrop.width + (direction * sizeDelta));
+              const deltaSize = newSize - startCrop.width;
+              
               newCrop.x = Math.max(0, startCrop.x - deltaSize);
               newCrop.width = newSize;
               newCrop.height = newSize;
             }
             break;
-          case 'circle-se': // circle bottom-right
+          case 'circle-se': // circle bottom-right - most intuitive resize
             {
-              const avgDelta = (deltaX + deltaY) / 2;
-              const newSize = Math.max(20, startCrop.width + avgDelta);
+              const sizeDelta = Math.max(Math.abs(deltaX), Math.abs(deltaY));
+              const direction = deltaX > 0 || deltaY > 0 ? 1 : -1;
+              const newSize = Math.max(20, startCrop.width + (direction * sizeDelta));
+              
               newCrop.width = newSize;
               newCrop.height = newSize;
             }
