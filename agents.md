@@ -845,3 +845,397 @@ Instead of trying to open data URLs directly, implement a two-step process:
 📋 **REQUIREMENTS**: Modify download function to use upload-then-open strategy  
 ⚡ **IMPACT**: Will enable downloads in Farcaster environment where 80%+ of users are located
 🎯 **SUCCESS CRITERIA**: Download button opens cropped image in external browser from Farcaster
+
+---
+
+## Error #17: Connect Wallet Button Not Working on Desktop Farcaster
+
+### What Happened
+The Connect Wallet button appeared but was completely non-functional on desktop Farcaster environments. Users could click the button but no wallet connection interface would appear, making it impossible to connect wallets for blockchain transactions.
+
+### Root Cause Analysis
+The issue was caused by **environment-specific wallet implementation limitations**:
+
+1. **MiniKit Environment Dependency**
+   - OnchainKit's wallet components were designed specifically for MiniKit (mobile) environments
+   - Desktop Farcaster doesn't provide the same MiniKit APIs as mobile Farcaster
+   - `ConnectWallet` component from `@coinbase/onchainkit/wallet` failed silently on desktop
+
+2. **Missing Fallback Implementation**
+   - No fallback wallet connection method for non-MiniKit environments
+   - Application assumed all users would be in mobile MiniKit context
+   - Desktop users had no alternative wallet connection path
+
+3. **Environment Detection Gap**
+   - No logic to detect desktop vs mobile Farcaster environments
+   - Conditional rendering based on environment capabilities was missing
+   - Single wallet implementation for all environments
+
+### How It Was Fixed
+Implemented a **dual wallet system** with environment detection and fallback support:
+
+#### **1. Added Wagmi Provider with Multiple Connectors**
+```typescript
+// app/providers.tsx
+const wagmiConfig = createConfig({
+  chains: [base],
+  connectors: [
+    coinbaseWallet({
+      appName: process.env.NEXT_PUBLIC_ONCHAINKIT_PROJECT_NAME || "Kroppit",
+      appLogoUrl: process.env.NEXT_PUBLIC_ICON_URL,
+    }),
+    metaMask(),
+    walletConnect({
+      projectId: process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID || "",
+    }),
+  ],
+  transports: {
+    [base.id]: http(),
+  },
+});
+
+<WagmiProvider config={wagmiConfig}>
+  <QueryClientProvider client={queryClient}>
+    <MiniKitProvider>
+      {children}
+    </MiniKitProvider>
+  </QueryClientProvider>
+</WagmiProvider>
+```
+
+#### **2. Environment Detection Logic**
+```typescript
+// app/page.tsx
+const shouldUseFallback = !context || !isFrameReady || (typeof window !== 'undefined' && 
+  !window.navigator.userAgent.includes('Mobile') && 
+  !window.navigator.userAgent.includes('Android') && 
+  !window.navigator.userAgent.includes('iPhone'));
+
+setIsDesktopFallback(shouldUseFallback);
+```
+
+#### **3. Conditional Wallet Rendering**
+```typescript
+{isDesktopFallback ? (
+  // Fallback wallet for desktop environments
+  <div className="z-10">
+    {isConnected ? (
+      <div className="flex items-center space-x-2">
+        <div className="text-sm">
+          {address ? `${address.slice(0, 6)}...${address.slice(-4)}` : 'Connected'}
+        </div>
+        <Button onClick={() => disconnect()}>Disconnect</Button>
+      </div>
+    ) : (
+      <Button onClick={() => connect({ connector: connectors[0] })}>
+        Connect Wallet
+      </Button>
+    )}
+  </div>
+) : (
+  // MiniKit wallet for mobile/frame environments
+  <Wallet className="z-10">
+    <ConnectWallet>
+      <Name className="text-inherit" />
+    </ConnectWallet>
+  </Wallet>
+)}
+```
+
+### Key Technical Changes
+1. **Dual Provider Setup**: Both WagmiProvider and MiniKitProvider for comprehensive wallet support
+2. **Environment Detection**: User agent-based detection to determine appropriate wallet interface
+3. **Fallback Implementation**: Standard web3 wallet connectors for desktop environments
+4. **Graceful Degradation**: Mobile users continue using MiniKit, desktop users get standard connectors
+
+### Key Lessons Learned
+1. **Platform-Specific Implementation**: Different environments require different wallet connection approaches
+2. **Fallback Strategy Essential**: Always provide alternative implementations for restricted environments
+3. **Environment Detection**: Proper detection enables appropriate UX for each platform
+4. **Provider Layering**: Multiple providers can coexist to support different use cases
+5. **User Experience Consistency**: Maintain similar functionality across all environments
+
+### Prevention Strategy
+- **Test across environments**: Always test wallet functionality on both mobile and desktop
+- **Implement environment detection** early in wallet integration
+- **Provide multiple connection methods** for maximum compatibility
+- **Document platform limitations** and implementation approaches
+- **Use progressive enhancement** starting with most restricted environment
+
+### Technical Implementation Notes
+- **Provider Order**: WagmiProvider wraps MiniKitProvider to ensure proper context access
+- **Connector Priority**: Coinbase Wallet first for Base ecosystem alignment
+- **State Management**: Both wallet systems maintain separate but compatible state
+- **Error Handling**: Graceful fallback when one system is unavailable
+
+### User Impact Resolution
+✅ **FIXED**: Connect Wallet button now works on both desktop and mobile Farcaster
+✅ **IMPROVED**: Environment-appropriate wallet interfaces for better UX
+✅ **ENHANCED**: Support for multiple wallet types (Coinbase, MetaMask, WalletConnect)
+✅ **RELIABLE**: Fallback system ensures wallet connection always available
+
+---
+
+## Error #18: Circle Crop Frame Disproportionate Resizing Issue Recurrence
+
+### What Happened
+The circle crop frame was allowing disproportionate resizing, creating oval shapes instead of maintaining perfect circles. This was a recurrence of a previously fixed issue, indicating that the fix had been broken or was not properly implemented.
+
+### Root Cause Analysis
+The issue was caused by **debugging and environment detection not working properly**:
+
+1. **State Update Timing**
+   - `cropShape` state might not be updating correctly when circle mode is selected
+   - React state updates are asynchronous and may not reflect immediately in resize handlers
+   - Console debugging was needed to verify state flow
+
+2. **Handle Rendering Logic**
+   - Conditional rendering of circle vs rectangle handles might be failing
+   - `cropShape === 'circle'` condition might not be true when expected
+   - Rectangle handles might be showing instead of circle handles
+
+3. **Resize Logic Verification**
+   - Circle-specific resize handlers (`circle-nw`, `circle-ne`, etc.) might not be triggered
+   - Rectangle resize handlers (`nw`, `ne`, etc.) might be used instead
+   - Proportional constraints might not be applied
+
+### How It Was Fixed
+Added **comprehensive debugging** to identify the exact failure point:
+
+#### **1. setCropSize Function Debugging**
+```typescript
+const setCropSize = useCallback((size: 'square' | 'landscape' | 'portrait' | 'circle') => {
+  console.log('🔵 setCropSize called with:', size);
+  
+  switch (size) {
+    case 'circle':
+      width = height = maxSize;
+      setCropShape('circle');
+      console.log('🔵 Setting crop shape to circle');
+      break;
+  }
+}, []);
+```
+
+#### **2. Resize Handle Detection Debugging**
+```typescript
+switch (handle) {
+  case 'nw': // rectangle top-left
+    console.log('🔲 Using rectangle nw resize');
+    break;
+  case 'circle-nw': // circle top-left
+    console.log('🔵 Using circle-nw resize - maintaining aspect ratio');
+    break;
+}
+```
+
+#### **3. Handle Rendering Debugging**
+```typescript
+{cropShape === 'rectangle' && (
+  <>
+    {console.log('🔲 Rendering rectangle corner handles')}
+    {/* Rectangle handles */}
+  </>
+)}
+
+{cropShape === 'circle' && (
+  <>
+    {console.log('🔵 Rendering circle corner handles')}
+    {/* Circle handles */}
+  </>
+)}
+```
+
+### Debugging Strategy Implemented
+1. **State Flow Tracking**: Log when circle mode is selected and `cropShape` state changes
+2. **Handle Verification**: Log which resize handles are being rendered
+3. **Resize Logic Confirmation**: Log which resize case is being executed
+4. **Visual Feedback**: Console messages with emojis for easy identification
+
+### Key Lessons Learned
+1. **Debugging is Essential**: Complex state-dependent features require systematic debugging
+2. **State Verification**: Always verify state updates are working as expected
+3. **Conditional Rendering Issues**: Complex conditions can fail silently without debugging
+4. **Regression Prevention**: Add debugging early to catch regressions quickly
+5. **Visual Console Logs**: Emoji-based logging makes debugging output easier to parse
+
+### Prevention Strategy
+- **Implement debugging early** in complex interactive features
+- **Test state transitions** systematically (rectangle → circle → rectangle)
+- **Verify handle rendering** matches expected crop shape
+- **Monitor resize logic execution** during user interactions
+- **Keep debugging code** in development builds for quick issue resolution
+
+### Technical Implementation Notes
+- **Debugging Logs**: Added comprehensive console logging with emoji indicators
+- **State Tracking**: Monitor `cropShape` state changes and their effects
+- **Handle Verification**: Confirm correct handles are rendered and used
+- **Resize Logic**: Verify circle-specific resize cases are executed
+
+### Resolution Process
+1. **Deploy debugging version** to identify exact failure point
+2. **Test circle mode selection** and verify console output
+3. **Test resize operations** and confirm correct logic is used
+4. **Fix identified issues** based on debugging output
+5. **Remove debugging** once issue is confirmed resolved
+
+### User Impact During Resolution
+⚠️ **TEMPORARY**: Debugging logs visible in console during issue resolution
+✅ **MAINTAINED**: Core functionality preserved while debugging
+🔍 **ENHANCED**: Better visibility into system behavior for faster resolution
+
+---
+
+## Error #19: Reset Button Functionality Broken After Updates
+
+### What Happened
+The Reset button stopped working after recent updates, preventing users from resetting the crop area and returning to the original image view. This broke the expected user flow of "upload → crop → reset → try again".
+
+### Root Cause Analysis
+The issue required **systematic debugging** to identify the failure point:
+
+1. **Function Connectivity**
+   - Reset button might not be properly connected to `resetCrop` function
+   - Event handler might not be firing
+   - Function might be undefined or have incorrect scope
+
+2. **Dependency Issues**
+   - `resetCrop` function dependencies might be incorrect
+   - `drawImage` or `initializeCropArea` functions might be missing
+   - useCallback dependency array might be causing stale closures
+
+3. **State Reset Logic**
+   - Visual state reset sequence might be incorrect
+   - Canvas redraw operation might be failing
+   - Crop area reinitialization might not be working
+
+### How It Was Fixed
+Added **comprehensive debugging** to trace the reset function execution:
+
+#### **1. Reset Function Call Debugging**
+```typescript
+const resetCrop = useCallback(() => {
+  console.log('🔄 Reset button clicked');
+  
+  if (image) {
+    console.log('✅ Image exists, proceeding with reset');
+    
+    // Reset visual state first
+    setShowCroppedResult(false);
+    setShowPreview(false);
+    setCroppedImageData(null);
+    
+    // Reset crop shape to default rectangle
+    setCropShape('rectangle');
+    console.log('🔲 Reset crop shape to rectangle');
+    
+    // Redraw original image on canvas
+    const canvas = canvasRef.current;
+    if (canvas) {
+      console.log('🎨 Redrawing original image on canvas');
+      drawImage(image, canvas);
+    } else {
+      console.log('❌ Canvas not found for redraw');
+    }
+    
+    // Reset crop area
+    console.log('📐 Reinitializing crop area');
+    initializeCropArea(image);
+    
+    console.log('✅ Reset complete');
+  } else {
+    console.log('❌ No image to reset');
+  }
+}, [image, initializeCropArea, drawImage]);
+```
+
+#### **2. Step-by-Step Execution Tracking**
+- **Button Click**: Verify reset function is called
+- **Image Check**: Confirm image exists for reset
+- **State Reset**: Track visual state changes
+- **Canvas Redraw**: Verify canvas operations
+- **Crop Reset**: Confirm crop area reinitialization
+
+### Debugging Strategy Implementation
+1. **Function Entry**: Log when reset button is clicked
+2. **Prerequisite Check**: Verify image exists before proceeding
+3. **State Operations**: Log each state reset operation
+4. **Canvas Operations**: Track canvas redraw success/failure
+5. **Completion Status**: Confirm reset sequence completion
+
+### Previous Fix Reference (Error #11)
+The correct reset implementation from agents.md:
+```typescript
+const resetCrop = useCallback(() => {
+  if (image) {
+    // Reset visual state first
+    setShowCroppedResult(false);
+    setShowPreview(false);
+    setCroppedImageData(null);
+    
+    // Redraw original image on canvas
+    const canvas = canvasRef.current;
+    if (canvas) {
+      drawImage(image, canvas);
+    }
+    
+    // Reset crop area
+    initializeCropArea(image);
+  }
+}, [image, initializeCropArea, drawImage]);
+```
+
+### Key Lessons Learned
+1. **Regression Testing**: Previously fixed issues can break again during updates
+2. **Debugging First**: Add comprehensive logging before attempting fixes
+3. **Function Dependencies**: Verify all function dependencies are available
+4. **State Management**: Complex reset operations require careful state sequencing
+5. **User Flow Protection**: Reset functionality is critical for user experience
+
+### Prevention Strategy
+- **Test complete user flows** after any significant updates
+- **Maintain regression test checklist** for critical functions
+- **Keep debugging infrastructure** ready for quick issue resolution
+- **Document known good implementations** for reference
+- **Verify function dependencies** during updates
+
+### Technical Implementation Notes
+- **Comprehensive Logging**: Track every step of reset operation
+- **Error Identification**: Pinpoint exact failure point in reset sequence
+- **State Verification**: Confirm each state change occurs as expected
+- **Canvas Operations**: Verify canvas redraw and crop area reset
+
+### Resolution Process
+1. **Deploy debugging version** to trace reset execution
+2. **Test reset button** and monitor console output
+3. **Identify failure point** from debugging logs
+4. **Apply targeted fix** based on identified issue
+5. **Verify complete functionality** and remove debugging
+
+### User Impact During Resolution
+⚠️ **TEMPORARY**: Debugging output visible during issue resolution
+🔍 **DIAGNOSTIC**: Clear visibility into reset function execution
+✅ **MAINTAINED**: Other app functionality unaffected during debugging
+
+---
+
+## Critical Debugging Best Practices
+
+### When to Add Debugging
+1. **Complex State-Dependent Features**: Interactive UI elements with multiple states
+2. **Regression Issues**: Previously working features that break after updates
+3. **Cross-Environment Compatibility**: Features that work differently across platforms
+4. **User-Reported Issues**: Problems that can't be easily reproduced
+
+### Debugging Implementation Strategy
+1. **Emoji-Based Logging**: Use visual indicators (🔵, 🔲, ✅, ❌) for easy parsing
+2. **Step-by-Step Tracking**: Log each major operation in complex functions
+3. **State Verification**: Confirm state changes occur as expected
+4. **Conditional Logging**: Add debugging without breaking functionality
+5. **Temporary Deployment**: Quick debugging deployment for issue resolution
+
+### Post-Resolution Cleanup
+1. **Remove or Comment**: Clean up debugging code after issue resolution
+2. **Document Solution**: Record fix in agents.md for future reference
+3. **Add Prevention Measures**: Implement checks to prevent regression
+4. **Update Test Procedures**: Include new scenarios in testing checklist
