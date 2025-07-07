@@ -45,6 +45,34 @@ export function PhotoCropperCard({
   const resizeHandleRef = useRef<string>('');
   const dragStartRef = useRef({ x: 0, y: 0 });
   const cropStartRef = useRef({ x: 0, y: 0, width: 0, height: 0 });
+  const animationFrameRef = useRef<number | null>(null);
+  const cropOverlayRef = useRef<HTMLDivElement>(null);
+
+  // Direct DOM update for immediate visual feedback
+  const updateCropOverlay = useCallback((newCrop: CropData) => {
+    const overlay = cropOverlayRef.current;
+    if (overlay) {
+      overlay.style.left = newCrop.x + 'px';
+      overlay.style.top = newCrop.y + 'px';
+      overlay.style.width = newCrop.width + 'px';
+      overlay.style.height = newCrop.height + 'px';
+    }
+  }, []);
+
+  // Throttled update function for smooth rendering
+  const updateCropData = useCallback((newCrop: CropData) => {
+    // Update DOM immediately for instant visual feedback
+    updateCropOverlay(newCrop);
+    
+    if (animationFrameRef.current) {
+      cancelAnimationFrame(animationFrameRef.current);
+    }
+    
+    animationFrameRef.current = requestAnimationFrame(() => {
+      setCropData(newCrop);
+      animationFrameRef.current = null;
+    });
+  }, [updateCropOverlay]);
 
   // Global mouse and touch event handlers for dragging and resizing
   useEffect(() => {
@@ -72,6 +100,9 @@ export function PhotoCropperCard({
     };
 
     const handleGlobalMove = (e: MouseEvent | TouchEvent) => {
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+      
       const pos = getEventPosition(e);
 
       if (isDraggingCropRef.current) {
@@ -82,15 +113,15 @@ export function PhotoCropperCard({
         const newY = cropStartRef.current.y + deltaY;
         
         // Constrain to canvas bounds
-        const constrainedX = Math.max(0, Math.min(newX, canvas.width - cropData.width));
-        const constrainedY = Math.max(0, Math.min(newY, canvas.height - cropData.height));
+        const constrainedX = Math.max(0, Math.min(newX, canvas.width - cropStartRef.current.width));
+        const constrainedY = Math.max(0, Math.min(newY, canvas.height - cropStartRef.current.height));
         
-        setCropData(prevCrop => ({
+        updateCropData({
           x: constrainedX,
           y: constrainedY,
-          width: prevCrop.width,
-          height: prevCrop.height
-        }));
+          width: cropStartRef.current.width,
+          height: cropStartRef.current.height
+        });
       } else if (isResizingRef.current) {
         const handle = resizeHandleRef.current;
         const startCrop = cropStartRef.current;
@@ -229,7 +260,7 @@ export function PhotoCropperCard({
           newCrop.height = minSize;
         }
 
-        setCropData(newCrop);
+        updateCropData(newCrop);
       }
     };
 
@@ -259,8 +290,14 @@ export function PhotoCropperCard({
       document.removeEventListener('touchmove', handleGlobalMove);
       document.removeEventListener('touchend', handleGlobalEnd);
       document.removeEventListener('touchcancel', handleGlobalEnd);
+      
+      // Clean up animation frame
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+        animationFrameRef.current = null;
+      }
     };
-  }, [cropData]);
+  }, [updateCropData]);
 
   // Effect to setup canvas when image changes
   useEffect(() => {
@@ -1043,7 +1080,8 @@ export function PhotoCropperCard({
               {/* Draggable crop area - hide when showing result */}
               {cropData.width > 0 && cropData.height > 0 && !showCroppedResult && (
                 <div
-                  className={`absolute border-2 border-white shadow-lg cursor-move transition-all ${cropShape === 'circle' ? 'rounded-full' : ''}`}
+                  ref={cropOverlayRef}
+                  className={`absolute border-2 border-white shadow-lg cursor-move ${cropShape === 'circle' ? 'rounded-full' : ''}`}
                   style={{
                     left: cropData.x + 'px',
                     top: cropData.y + 'px',

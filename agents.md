@@ -458,3 +458,170 @@ npm run dev
 6. **Use systematic debugging** approaches
 7. **Maintain user-focused perspective** throughout development
 8. **MANDATORY**: Run environment cleanup before starting development sessions
+
+---
+
+## Error #13: Mobile Touch Events Not Working Despite Implementation
+
+### What Happened
+After implementing comprehensive touch event support for crop resizing and dragging on mobile devices, the user reported that touch functionality was still completely non-functional. The implementation appeared correct in code but failed in practice.
+
+### Root Cause Analysis
+Several potential issues identified:
+
+1. **Event Propagation Issues**
+   - Touch events being prevented/stopped by parent elements
+   - CSS touch-action properties blocking touch interaction
+   - Browser default touch behaviors interfering
+
+2. **Event Handler Logic Problems**
+   - `getEventPosition` function may not properly handle TouchEvent vs MouseEvent types
+   - Touch coordinate calculation issues with canvas positioning
+   - Event type detection logic flaws
+
+3. **CSS Touch Interaction Blocking**
+   - Missing or incorrect `touch-action` CSS properties
+   - User-select properties preventing touch interaction
+   - Browser zoom/scroll behaviors interfering
+
+4. **React Event Handling Issues**
+   - Synthetic events vs native events mismatch
+   - Event listener timing/mounting issues
+   - State management conflicts with touch events
+
+### Technical Implementation Gaps
+- Touch events added but not properly tested on actual mobile devices
+- Event coordinate transformation may be incorrect for touch
+- Missing preventDefault() calls for touch events where needed
+- Potential conflicts between global and local event handlers
+
+### Key Lessons Learned
+1. **Testing Reality Check**: Code that looks correct doesn't guarantee functionality
+2. **Device-Specific Testing**: Mobile touch requires testing on actual mobile devices
+3. **Event System Complexity**: Touch events have different behavior patterns than mouse events
+4. **Browser Compatibility**: Touch handling varies significantly across mobile browsers
+5. **Progressive Implementation**: Should have tested touch on single element before implementing across all handles
+
+### Next Steps Required
+1. **Systematic Touch Debugging**
+   - Test touch events on individual handles first
+   - Add console logging to verify touch events are firing
+   - Test coordinate calculation accuracy
+
+2. **CSS Touch Properties Audit**
+   - Verify touch-action CSS properties
+   - Check for conflicting user-select properties
+   - Ensure proper mobile viewport settings
+
+3. **Event Handler Verification**
+   - Test TouchEvent type detection
+   - Verify coordinate calculation for touch vs mouse
+   - Check event propagation chain
+
+4. **Mobile-Specific Testing**
+   - Test on actual mobile devices, not desktop browser simulation
+   - Test across different mobile browsers (Safari, Chrome, Firefox)
+   - Verify touch coordinates map correctly to canvas area
+
+### Prevention Strategy
+- **Mobile-First Testing**: Always test mobile functionality on actual devices
+- **Incremental Implementation**: Test touch on one element before implementing everywhere
+- **Event Logging**: Add comprehensive logging for debugging touch events
+- **Cross-Browser Testing**: Test touch functionality across mobile browsers
+- **User Feedback Integration**: Get immediate user feedback when implementing touch features
+
+### Critical Status
+🚨 **HIGH PRIORITY**: Mobile functionality is essential for a Mini App deployed to mobile-first platform (Farcaster)
+🚨 **USER IMPACT**: Complete loss of core functionality on mobile devices
+🚨 **BUSINESS IMPACT**: App unusable for primary target audience
+
+### Resolution Required
+This issue requires immediate systematic debugging and resolution as mobile touch interaction is core to the app's functionality and user experience.
+
+---
+
+## Error #14: Crop Frame Sync Delay During Rapid Resizing
+
+### What Happened
+The crop frame (white overlay with resize handles) was not staying in sync with the actual crop area during rapid resizing operations. Users experienced a visual lag where the crop frame would appear to "chase" the mouse cursor, creating a poor user experience and making precise cropping difficult.
+
+### Root Cause Analysis
+The issue was caused by React's state update batching and asynchronous rendering cycle:
+
+1. **React State Update Delays**
+   - `setCropData()` calls were being batched by React during rapid mouse movements
+   - Visual updates were delayed until React's next render cycle
+   - State updates weren't happening at 60fps during rapid interactions
+
+2. **CSS Transition Interference**
+   - `transition-all` CSS class was adding animation delays to position changes
+   - Transitions were smoothing out rapid position updates, creating visual lag
+   - CSS animations conflicted with real-time user interactions
+
+3. **Event Handler Performance**
+   - `requestAnimationFrame` throttling was actually causing delays instead of improving performance
+   - Mouse move events were firing faster than RAF could process them
+   - State updates were queued rather than applied immediately
+
+### How It Was Fixed
+Implemented a dual-update system combining direct DOM manipulation with React state management:
+
+```typescript
+// Direct DOM update for immediate visual feedback
+const updateCropOverlay = useCallback((newCrop: CropData) => {
+  const overlay = cropOverlayRef.current;
+  if (overlay) {
+    overlay.style.left = newCrop.x + 'px';
+    overlay.style.top = newCrop.y + 'px';
+    overlay.style.width = newCrop.width + 'px';
+    overlay.style.height = newCrop.height + 'px';
+  }
+}, []);
+
+// Combined update function
+const updateCropData = useCallback((newCrop: CropData) => {
+  // Update DOM immediately for instant visual feedback
+  updateCropOverlay(newCrop);
+  
+  // Update React state asynchronously
+  if (animationFrameRef.current) {
+    cancelAnimationFrame(animationFrameRef.current);
+  }
+  
+  animationFrameRef.current = requestAnimationFrame(() => {
+    setCropData(newCrop);
+    animationFrameRef.current = null;
+  });
+}, [updateCropOverlay]);
+```
+
+### Key Technical Changes
+1. **Added direct DOM manipulation**: Immediate visual updates bypass React's render cycle
+2. **Removed CSS transitions**: Eliminated `transition-all` class causing animation delays
+3. **Dual update system**: DOM updates for visuals, React state for component consistency
+4. **Added overlay ref**: Direct access to crop overlay DOM element for manipulation
+
+### Key Lessons Learned
+1. **React State vs Visual Performance**: React's batching can cause visual lag in high-frequency interactions
+2. **Direct DOM Manipulation**: Sometimes necessary for immediate visual feedback in interactive UIs
+3. **CSS Transitions**: Can interfere with real-time user interactions requiring instant feedback
+4. **Performance Optimization**: `requestAnimationFrame` isn't always the solution - sometimes creates delays
+5. **User Experience Priority**: Visual responsiveness is critical for interactive crop tools
+
+### Prevention Strategy
+- **Test rapid interactions**: Always test high-frequency user interactions (rapid dragging, resizing)
+- **Consider DOM manipulation**: Use direct DOM updates for immediate visual feedback when needed
+- **Avoid CSS transitions**: On interactive elements that require instant visual response
+- **Dual update systems**: Combine immediate DOM updates with proper React state management
+- **Performance testing**: Test UI responsiveness during rapid user interactions
+
+### Technical Implementation Notes
+- Direct DOM manipulation maintains React component integrity by updating state asynchronously
+- Visual updates happen instantly while React state stays synchronized
+- CSS transitions removed only from interactive elements, not from general UI animations
+- Solution maintains accessibility and doesn't break React's component lifecycle
+
+### User Impact Resolution
+✅ **FIXED**: Crop frame now stays perfectly synchronized with resize handles
+✅ **IMPROVED**: Professional-grade cropping experience with no visual lag
+✅ **ENHANCED**: Precise control during rapid resize operations
