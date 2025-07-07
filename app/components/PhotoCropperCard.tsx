@@ -2,6 +2,7 @@
 
 import { useRef, useState, useCallback, useEffect } from 'react';
 import { useNotification, useOpenUrl } from "@coinbase/onchainkit/minikit";
+import { sdk } from "@farcaster/frame-sdk";
 import { Button, Icon } from "./DemoComponents";
 
 interface CropData {
@@ -865,7 +866,7 @@ export function PhotoCropperCard({
     }
   }, [sendNotification]);
 
-  // Share to Farcaster
+  // Share to Farcaster directly
   const shareToFarcaster = useCallback(async () => {
     if (!croppedImageData) {
       sendNotification({
@@ -882,15 +883,43 @@ export function PhotoCropperCard({
       const imageUrl = await uploadImageToHost(croppedImageData);
       
       if (imageUrl) {
-        const shareText = "Just kropped a perfect photo! 📸 Try Kroppit - the easiest photo crop tool for Farcaster:";
-        const shareUrl = `https://warpcast.com/~/compose?text=${encodeURIComponent(shareText)}&embeds[]=${encodeURIComponent(imageUrl)}`;
-        openUrl(shareUrl);
-        
-        sendNotification({
-          title: '🚀 Ready to Share!',
-          body: 'Opening Farcaster with your cropped image.'
-        });
+        // Try direct casting with Farcaster Frame SDK
+        try {
+          const result = await sdk.actions.requestCast({
+            cast: {
+              text: "Just kropped a perfect photo! 📸 Try Kroppit - the easiest photo crop tool for Farcaster:",
+              embeds: [imageUrl]
+            }
+          });
+          
+          if (result.isSuccess) {
+            sendNotification({
+              title: '🚀 Cast Sent!',
+              body: 'Your cropped image has been shared to Farcaster.'
+            });
+          } else {
+            throw new Error(result.error?.message || 'Failed to cast');
+          }
+        } catch (directCastError) {
+          console.log('Direct cast failed, falling back to Warpcast:', directCastError);
+          
+          // Fallback to Warpcast compose URL
+          const shareText = "Just kropped a perfect photo! 📸 Try Kroppit - the easiest photo crop tool for Farcaster:";
+          const shareUrl = `https://warpcast.com/~/compose?text=${encodeURIComponent(shareText)}&embeds[]=${encodeURIComponent(imageUrl)}`;
+          openUrl(shareUrl);
+          
+          sendNotification({
+            title: '🚀 Ready to Share!',
+            body: 'Opening Farcaster with your cropped image.'
+          });
+        }
       }
+    } catch (error) {
+      console.error('Share to Farcaster error:', error);
+      sendNotification({
+        title: '❌ Share Failed',
+        body: 'Could not share to Farcaster. Please try again.'
+      });
     } finally {
       setIsProcessing(false);
     }
@@ -1373,7 +1402,7 @@ export function PhotoCropperCard({
               icon={<Icon name="star" size="sm" />}
               disabled={isProcessing}
             >
-              {isProcessing ? 'Uploading...' : 'Share'}
+              {isProcessing ? 'Casting...' : 'Cast to Farcaster'}
             </Button>
           </div>
         )}

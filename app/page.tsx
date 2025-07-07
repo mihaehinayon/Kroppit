@@ -19,6 +19,7 @@ import {
   WalletDropdownDisconnect,
 } from "@coinbase/onchainkit/wallet";
 import { useEffect, useMemo, useState, useCallback } from "react";
+import { useAccount, useConnect, useDisconnect } from "wagmi";
 import { Button } from "./components/DemoComponents";
 import { Icon } from "./components/DemoComponents";
 import { PhotoCropperCard } from "./components/PhotoCropperCard";
@@ -26,15 +27,45 @@ import { PhotoCropperCard } from "./components/PhotoCropperCard";
 export default function App() {
   const { setFrameReady, isFrameReady, context } = useMiniKit();
   const [frameAdded, setFrameAdded] = useState(false);
+  const [isDesktopFallback, setIsDesktopFallback] = useState(false);
 
   const addFrame = useAddFrame();
   const openUrl = useOpenUrl();
+  
+  // Fallback wallet connection for desktop environments
+  const { address, isConnected } = useAccount();
+  const { connect, connectors, isPending } = useConnect();
+  const { disconnect } = useDisconnect();
 
   useEffect(() => {
     if (!isFrameReady) {
       setFrameReady();
     }
   }, [setFrameReady, isFrameReady]);
+
+  // Debug MiniKit initialization and detect fallback need
+  useEffect(() => {
+    const shouldUseFallback = !context || !isFrameReady || (typeof window !== 'undefined' && 
+      !window.navigator.userAgent.includes('Mobile') && 
+      !window.navigator.userAgent.includes('Android') && 
+      !window.navigator.userAgent.includes('iPhone'));
+    
+    console.log('MiniKit Debug:', {
+      isFrameReady,
+      shouldUseFallback,
+      context: context ? {
+        client: context.client,
+        user: context.user,
+        environment: typeof window !== 'undefined' ? {
+          userAgent: window.navigator.userAgent,
+          isMobile: /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(window.navigator.userAgent),
+          isDesktopFarcaster: window.navigator.userAgent.includes('Farcaster')
+        } : null
+      } : null
+    });
+    
+    setIsDesktopFallback(shouldUseFallback);
+  }, [isFrameReady, context]);
 
   const handleAddFrame = useCallback(async () => {
     const frameAdded = await addFrame();
@@ -74,20 +105,51 @@ export default function App() {
         <header className="flex justify-between items-center mb-6 h-11">
           <div>
             <div className="flex items-center space-x-2">
-              <Wallet className="z-10">
-                <ConnectWallet>
-                  <Name className="text-inherit" />
-                </ConnectWallet>
-                <WalletDropdown>
-                  <Identity className="px-4 pt-3 pb-2" hasCopyAddressOnClick>
-                    <Avatar />
-                    <Name />
-                    <Address />
-                    <EthBalance />
-                  </Identity>
-                  <WalletDropdownDisconnect />
-                </WalletDropdown>
-              </Wallet>
+              {isDesktopFallback ? (
+                // Fallback wallet for desktop environments
+                <div className="z-10">
+                  {isConnected ? (
+                    <div className="flex items-center space-x-2">
+                      <div className="text-sm">
+                        {address ? `${address.slice(0, 6)}...${address.slice(-4)}` : 'Connected'}
+                      </div>
+                      <Button
+                        onClick={() => disconnect()}
+                        variant="ghost"
+                        size="sm"
+                        className="text-xs"
+                      >
+                        Disconnect
+                      </Button>
+                    </div>
+                  ) : (
+                    <Button
+                      onClick={() => connect({ connector: connectors[0] })}
+                      variant="ghost"
+                      size="sm"
+                      disabled={isPending}
+                    >
+                      {isPending ? 'Connecting...' : 'Connect Wallet'}
+                    </Button>
+                  )}
+                </div>
+              ) : (
+                // MiniKit wallet for mobile/frame environments
+                <Wallet className="z-10">
+                  <ConnectWallet>
+                    <Name className="text-inherit" />
+                  </ConnectWallet>
+                  <WalletDropdown>
+                    <Identity className="px-4 pt-3 pb-2" hasCopyAddressOnClick>
+                      <Avatar />
+                      <Name />
+                      <Address />
+                      <EthBalance />
+                    </Identity>
+                    <WalletDropdownDisconnect />
+                  </WalletDropdown>
+                </Wallet>
+              )}
             </div>
           </div>
           <div>{saveFrameButton}</div>
