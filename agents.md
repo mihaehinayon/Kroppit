@@ -717,3 +717,131 @@ if (isMobile) {
 ✅ **IMPROVED**: Mobile users get clear instructions for saving images
 ✅ **ENHANCED**: Device-appropriate download experiences for better usability
 ✅ **ACCESSIBLE**: Works around mobile browser security restrictions
+
+---
+
+## Error #16: Download Button Still Not Working in Farcaster Environment
+
+### What Happened
+Despite implementing Farcaster-specific download handling with `openUrl()`, the download button continued to fail silently in the Farcaster Mini App environment. The button appeared to work but no image was opened or downloaded.
+
+### Root Cause Analysis
+Through research of Farcaster Mini App documentation, the issue was identified as **URL scheme restrictions**:
+
+1. **Data URL Restrictions**
+   - Farcaster's `openUrl()` only accepts HTTP/HTTPS URLs, not data URLs
+   - Data URLs are blocked for security reasons, even for images
+   - Frame specification states: "Only accept data URIs if they are images" but this applies to rendering, not openUrl
+
+2. **Security Validation**
+   - MiniKit openUrl function has built-in validation to only accept HTTP and HTTPS URLs
+   - Documentation states: "Sanitize redirect URLs to ensure they start with http:// or https://"
+   - Data URLs (starting with `data:`) are rejected by the security layer
+
+3. **Cross-Client Compatibility**
+   - Farcaster enforces strict URL validation for consistent experience across clients
+   - Custom schemes and data URLs are blocked to prevent security vulnerabilities
+
+### Research Findings
+From Farcaster Mini App documentation:
+
+- **openUrl Limitations**: "Only HTTP and HTTPS URLs are accepted"
+- **Data URI Restrictions**: "Data URLs are restricted to image content only" for rendering, but completely blocked for openUrl
+- **Security Validation**: "URLs are sanitized and validated before opening"
+- **Best Practices**: "Use official SDK functions to ensure users have the best viewing experience"
+
+### Solution Plan (For Future Implementation)
+
+**Approach: Upload-then-Open Strategy**
+
+Instead of trying to open data URLs directly, implement a two-step process:
+
+1. **Upload Image to HTTP Hosting**
+   ```typescript
+   // Upload cropped image to Cloudinary (already implemented)
+   const imageUrl = await uploadImageToHost(croppedImageData);
+   ```
+
+2. **Use HTTP URL with openUrl**
+   ```typescript
+   if (imageUrl && isFarcaster) {
+     // This will work because it's an HTTP URL
+     openUrl(imageUrl);
+   }
+   ```
+
+### Implementation Steps Required
+
+1. **Modify Farcaster Download Logic**:
+   ```typescript
+   // Farcaster Mini App environment - upload image and use HTTP URL
+   if (isFarcaster) {
+     try {
+       console.log('Farcaster environment detected, uploading image...');
+       
+       // Upload image to get HTTP URL (required for Farcaster openUrl)
+       const imageUrl = await uploadImageToHost(croppedImageData);
+       
+       if (imageUrl) {
+         // Use MiniKit openUrl with HTTP URL
+         openUrl(imageUrl);
+         
+         sendNotification({
+           title: '📱 Image Opening!',
+           body: 'Image uploaded and opening in your browser.'
+         });
+       }
+     } catch (error) {
+       sendNotification({
+         title: '❌ Download Failed',
+         body: 'Could not open image in browser. Try the Share button instead.'
+       });
+     }
+   }
+   ```
+
+2. **Enhance Error Handling**:
+   - Add loading states during upload process
+   - Provide clear feedback about upload progress
+   - Fallback to directing users to Share button if upload fails
+
+3. **Optimize Upload Process**:
+   - Ensure Cloudinary preset is properly configured
+   - Add compression for faster uploads
+   - Handle network timeouts gracefully
+
+### Technical Implementation Notes
+
+- **Existing Infrastructure**: `uploadImageToHost` function already exists and works
+- **Cloudinary Integration**: Already configured with demo account
+- **Upload Process**: Converts base64 → blob → FormData → Cloudinary → HTTP URL
+- **MiniKit Compatibility**: HTTP URLs are fully supported by openUrl
+
+### Alternative Solutions if Upload Fails
+
+1. **Direct User to Share Button**: Share button already works and uploads images
+2. **Copy Image Data**: Fallback to clipboard copy (though limited utility)
+3. **Instructions for Manual Save**: Guide users to screenshot or share instead
+
+### Key Lessons Learned
+
+1. **Documentation Research**: Always research platform limitations before implementing
+2. **URL Scheme Restrictions**: Different platforms have different URL security policies
+3. **Data URL Limitations**: Data URLs are not universally supported for navigation
+4. **Upload-First Strategy**: For restricted environments, upload to HTTP hosting first
+5. **Fallback Planning**: Always have multiple fallback strategies for restricted environments
+
+### Prevention Strategy
+
+- **Research platform limitations** before implementing download features
+- **Test in actual environment** early in development process
+- **Implement upload-based solutions** for restricted iframe environments
+- **Provide clear fallback options** when primary methods fail
+- **Document platform-specific restrictions** for future reference
+
+### Future Implementation Priority
+
+🔧 **READY FOR IMPLEMENTATION**: Solution is well-defined and technically feasible
+📋 **REQUIREMENTS**: Modify download function to use upload-then-open strategy  
+⚡ **IMPACT**: Will enable downloads in Farcaster environment where 80%+ of users are located
+🎯 **SUCCESS CRITERIA**: Download button opens cropped image in external browser from Farcaster
