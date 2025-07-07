@@ -508,29 +508,122 @@ export function PhotoCropperCard({
 
   // Download cropped image
   const downloadImage = useCallback(() => {
-    if (!croppedImageData) return;
+    if (!croppedImageData) {
+      console.log('No cropped image data available');
+      return;
+    }
 
-    const canvas = previewCanvasRef.current;
-    if (!canvas) return;
+    console.log('Starting download process...');
 
-    canvas.toBlob((blob) => {
-      if (blob) {
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `kropped-image-${Date.now()}.png`;
-        document.body.appendChild(link);
+    // Detect if we're in a secure context and browser supports download
+    const isSecureContext = window.isSecureContext || location.protocol === 'https:';
+    const supportsDownload = 'download' in document.createElement('a');
+    
+    console.log('Browser support - Secure context:', isSecureContext, 'Download attr:', supportsDownload);
+
+    try {
+      // Method 1: Use the base64 data directly (most reliable for desktop)
+      const link = document.createElement('a');
+      
+      // Set attributes before adding to DOM
+      link.href = croppedImageData;
+      link.download = `kropped-image-${Date.now()}.png`;
+      link.style.display = 'none';
+      
+      // Add event listener to ensure download works
+      link.addEventListener('click', (e) => {
+        console.log('Download link clicked');
+      });
+      
+      // Ensure the link is added to DOM for better browser compatibility
+      document.body.appendChild(link);
+      
+      // Force click with user gesture simulation
+      const clickEvent = new MouseEvent('click', {
+        view: window,
+        bubbles: true,
+        cancelable: true
+      });
+      
+      link.dispatchEvent(clickEvent);
+      
+      // Alternative: Try direct click as fallback
+      if (supportsDownload) {
         link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(url);
-
-        // Send notification
-        sendNotification({
-          title: '📸 Photo Kropped!',
-          body: 'Your photo has been successfully cropped and downloaded.'
-        });
       }
-    }, 'image/png');
+      
+      // Clean up
+      setTimeout(() => {
+        if (document.body.contains(link)) {
+          document.body.removeChild(link);
+        }
+      }, 1000);
+
+      console.log('Download initiated successfully');
+
+      // Send notification
+      sendNotification({
+        title: '📸 Photo Kropped!',
+        body: 'Your photo has been successfully cropped and downloaded.'
+      });
+
+    } catch (error) {
+      console.error('Download failed with base64 method, trying canvas method:', error);
+      
+      // Fallback: Use canvas toBlob method
+      const canvas = previewCanvasRef.current;
+      if (!canvas) {
+        console.error('No canvas available for fallback download');
+        
+        // Last resort: Open image in new tab
+        try {
+          const newWindow = window.open();
+          if (newWindow) {
+            newWindow.document.write(`<img src="${croppedImageData}" alt="Cropped Image" style="max-width:100%;height:auto;"/>`);
+            newWindow.document.title = 'Kropped Image - Right click to save';
+          }
+        } catch (e) {
+          alert('Download failed. Please try cropping the image again.');
+        }
+        return;
+      }
+
+      canvas.toBlob((blob) => {
+        if (blob) {
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = `kropped-image-${Date.now()}.png`;
+          link.style.display = 'none';
+          document.body.appendChild(link);
+          link.click();
+          
+          setTimeout(() => {
+            if (document.body.contains(link)) {
+              document.body.removeChild(link);
+            }
+            URL.revokeObjectURL(url);
+          }, 1000);
+
+          sendNotification({
+            title: '📸 Photo Kropped!',
+            body: 'Your photo has been successfully cropped and downloaded.'
+          });
+        } else {
+          console.error('Failed to create blob from canvas');
+          // Last resort: Open image in new tab
+          try {
+            const newWindow = window.open();
+            if (newWindow) {
+              newWindow.document.write(`<img src="${croppedImageData}" alt="Cropped Image" style="max-width:100%;height:auto;"/>`);
+              newWindow.document.title = 'Kropped Image - Right click to save';
+            }
+          } catch (e) {
+            alert('Download failed. Please try cropping the image again.');
+          }
+        }
+      }, 'image/png');
+    }
   }, [croppedImageData, sendNotification]);
 
   // Upload image to temporary hosting
