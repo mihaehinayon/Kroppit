@@ -132,8 +132,11 @@ export function PhotoCropperCard({
         const deltaY = pos.y - dragStartRef.current.y;
 
         // Calculate new dimensions based on resize handle
+        console.log('🎯 Resize handle:', handle, 'for cropShape:', cropShape);
+        
         switch (handle) {
           case 'nw': // top-left
+            console.log('🔲 Using rectangle nw resize');
             newCrop.x = Math.max(0, startCrop.x + deltaX);
             newCrop.y = Math.max(0, startCrop.y + deltaY);
             newCrop.width = Math.max(20, startCrop.width - deltaX);
@@ -171,6 +174,7 @@ export function PhotoCropperCard({
           // Circle resize handles - maintain perfect 1:1 aspect ratio
           case 'circle-nw': // circle top-left - anchor bottom-right corner
             {
+              console.log('🔵 Using circle-nw resize - maintaining aspect ratio');
               // Anchor the bottom-right corner, resize from top-left
               const anchorX = startCrop.x + startCrop.width;
               const anchorY = startCrop.y + startCrop.height;
@@ -994,6 +998,8 @@ export function PhotoCropperCard({
     const canvas = canvasRef.current;
     if (!canvas || !image) return;
 
+    console.log('🔵 setCropSize called with:', size);
+    
     let width, height;
     const maxSize = Math.min(canvas.width, canvas.height) * 0.8;
     
@@ -1001,20 +1007,24 @@ export function PhotoCropperCard({
       case 'square':
         width = height = maxSize;
         setCropShape('rectangle');
+        console.log('🔲 Setting crop shape to rectangle for square');
         break;
       case 'landscape':
         width = canvas.width * 0.8;
         height = width * 0.6; // 16:9-ish ratio
         setCropShape('rectangle');
+        console.log('🔲 Setting crop shape to rectangle for landscape');
         break;
       case 'portrait':
         height = canvas.height * 0.8;
         width = height * 0.75; // 4:3-ish ratio
         setCropShape('rectangle');
+        console.log('🔲 Setting crop shape to rectangle for portrait');
         break;
       case 'circle':
         width = height = maxSize;
         setCropShape('circle');
+        console.log('🔵 Setting crop shape to circle');
         break;
     }
 
@@ -1184,6 +1194,7 @@ export function PhotoCropperCard({
                   {/* Corner resize handles */}
                   {cropShape === 'rectangle' && (
                     <>
+                      {console.log('🔲 Rendering rectangle corner handles')}
                       <div
                         className="absolute w-3 h-3 bg-white border border-gray-400 cursor-nw-resize"
                         style={{ left: '-6px', top: '-6px', zIndex: 1001 }}
@@ -1214,6 +1225,7 @@ export function PhotoCropperCard({
                   {/* Circle resize handles - only corner handles for proportional resize */}
                   {cropShape === 'circle' && (
                     <>
+                      {console.log('🔵 Rendering circle corner handles')}
                       <div
                         className="absolute w-3 h-3 bg-white border border-gray-400 rounded-full cursor-nw-resize"
                         style={{ left: '-6px', top: '-6px', zIndex: 1001 }}
