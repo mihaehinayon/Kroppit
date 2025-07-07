@@ -43,10 +43,16 @@ export default function App() {
     }
   }, [setFrameReady, isFrameReady]);
 
-  // Debug MiniKit initialization
+  // Debug MiniKit initialization and detect fallback need
   useEffect(() => {
+    const shouldUseFallback = !context || !isFrameReady || (typeof window !== 'undefined' && 
+      !window.navigator.userAgent.includes('Mobile') && 
+      !window.navigator.userAgent.includes('Android') && 
+      !window.navigator.userAgent.includes('iPhone'));
+    
     console.log('MiniKit Debug:', {
       isFrameReady,
+      shouldUseFallback,
       context: context ? {
         client: context.client,
         user: context.user,
@@ -57,6 +63,8 @@ export default function App() {
         } : null
       } : null
     });
+    
+    setIsDesktopFallback(shouldUseFallback);
   }, [isFrameReady, context]);
 
   const handleAddFrame = useCallback(async () => {
@@ -97,20 +105,51 @@ export default function App() {
         <header className="flex justify-between items-center mb-6 h-11">
           <div>
             <div className="flex items-center space-x-2">
-              <Wallet className="z-10">
-                <ConnectWallet>
-                  <Name className="text-inherit" />
-                </ConnectWallet>
-                <WalletDropdown>
-                  <Identity className="px-4 pt-3 pb-2" hasCopyAddressOnClick>
-                    <Avatar />
-                    <Name />
-                    <Address />
-                    <EthBalance />
-                  </Identity>
-                  <WalletDropdownDisconnect />
-                </WalletDropdown>
-              </Wallet>
+              {isDesktopFallback ? (
+                // Fallback wallet for desktop environments
+                <div className="z-10">
+                  {isConnected ? (
+                    <div className="flex items-center space-x-2">
+                      <div className="text-sm">
+                        {address ? `${address.slice(0, 6)}...${address.slice(-4)}` : 'Connected'}
+                      </div>
+                      <Button
+                        onClick={() => disconnect()}
+                        variant="ghost"
+                        size="sm"
+                        className="text-xs"
+                      >
+                        Disconnect
+                      </Button>
+                    </div>
+                  ) : (
+                    <Button
+                      onClick={() => connect({ connector: connectors[0] })}
+                      variant="ghost"
+                      size="sm"
+                      disabled={isPending}
+                    >
+                      {isPending ? 'Connecting...' : 'Connect Wallet'}
+                    </Button>
+                  )}
+                </div>
+              ) : (
+                // MiniKit wallet for mobile/frame environments
+                <Wallet className="z-10">
+                  <ConnectWallet>
+                    <Name className="text-inherit" />
+                  </ConnectWallet>
+                  <WalletDropdown>
+                    <Identity className="px-4 pt-3 pb-2" hasCopyAddressOnClick>
+                      <Avatar />
+                      <Name />
+                      <Address />
+                      <EthBalance />
+                    </Identity>
+                    <WalletDropdownDisconnect />
+                  </WalletDropdown>
+                </Wallet>
+              )}
             </div>
           </div>
           <div>{saveFrameButton}</div>
