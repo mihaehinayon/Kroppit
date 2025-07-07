@@ -19,6 +19,7 @@ import {
   WalletDropdownDisconnect,
 } from "@coinbase/onchainkit/wallet";
 import { useEffect, useMemo, useState, useCallback } from "react";
+import { useAccount, useConnect, useDisconnect } from "wagmi";
 import { Button } from "./components/DemoComponents";
 import { Icon } from "./components/DemoComponents";
 import { PhotoCropperCard } from "./components/PhotoCropperCard";
@@ -26,15 +27,37 @@ import { PhotoCropperCard } from "./components/PhotoCropperCard";
 export default function App() {
   const { setFrameReady, isFrameReady, context } = useMiniKit();
   const [frameAdded, setFrameAdded] = useState(false);
+  const [isDesktopFallback, setIsDesktopFallback] = useState(false);
 
   const addFrame = useAddFrame();
   const openUrl = useOpenUrl();
+  
+  // Fallback wallet connection for desktop environments
+  const { address, isConnected } = useAccount();
+  const { connect, connectors, isPending } = useConnect();
+  const { disconnect } = useDisconnect();
 
   useEffect(() => {
     if (!isFrameReady) {
       setFrameReady();
     }
   }, [setFrameReady, isFrameReady]);
+
+  // Debug MiniKit initialization
+  useEffect(() => {
+    console.log('MiniKit Debug:', {
+      isFrameReady,
+      context: context ? {
+        client: context.client,
+        user: context.user,
+        environment: typeof window !== 'undefined' ? {
+          userAgent: window.navigator.userAgent,
+          isMobile: /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(window.navigator.userAgent),
+          isDesktopFarcaster: window.navigator.userAgent.includes('Farcaster')
+        } : null
+      } : null
+    });
+  }, [isFrameReady, context]);
 
   const handleAddFrame = useCallback(async () => {
     const frameAdded = await addFrame();
