@@ -70,7 +70,7 @@ export default function App() {
 
   return (
     <div className="flex flex-col min-h-screen font-sans text-[var(--app-foreground)] mini-app-theme from-[var(--app-background)] to-[var(--app-gray)]">
-      <div className="w-full max-w-md mx-auto px-4 py-3">
+      <div className="w-full max-w-md mx-auto px-4 py-3 min-h-screen">
         <header className="flex justify-between items-center mb-6 h-11">
           <div>
             <div className="flex items-center space-x-2">

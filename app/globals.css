@@ -22,4 +22,20 @@ body {
   font-weight: 400;
   font-style: normal;
   font-size: 80%;
+  touch-action: manipulation;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* Better mobile viewport handling */
+@viewport {
+  width: device-width;
+  initial-scale: 1;
+}
+
+/* Improve touch targets for mobile */
+button, [role="button"] {
+  min-height: 44px;
+  min-width: 44px;
 }
