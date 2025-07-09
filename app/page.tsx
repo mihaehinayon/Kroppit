@@ -167,7 +167,7 @@ export default function App() {
           </picture>
           {context && (
             <p className="text-xs text-[var(--app-foreground-muted)] mt-1">
-              Welcome, {context.user?.displayName || 'User'}! 👋
+              Welcome, {context.user?.displayName || 'User'}!
             </p>
           )}
         </div>

@@ -267,12 +267,12 @@ export function PhotoCropperCard({
 
     const handleGlobalEnd = () => {
       if (isDraggingCropRef.current) {
-        console.log('🎯 Global end - stopping drag');
+        console.log('Global end - stopping drag');
         isDraggingCropRef.current = false;
         setIsDraggingCrop(false);
       }
       if (isResizingRef.current) {
-        console.log('🎯 Global end - stopping resize');
+        console.log('Global end - stopping resize');
         isResizingRef.current = false;
         resizeHandleRef.current = '';
       }
@@ -481,7 +481,7 @@ export function PhotoCropperCard({
     const x = (canvas.width - width) / 2;
     const y = (canvas.height - height) / 2;
 
-    console.log('🎯 Initializing crop area:', { x, y, width, height });
+    console.log('Initializing crop area:', { x, y, width, height });
     setCropData({ x, y, width, height });
   }, []);
 
@@ -508,20 +508,20 @@ export function PhotoCropperCard({
 
   // Perform crop operation
   const performCrop = useCallback(() => {
-    console.log('🎯 Krop Photo button clicked!');
+    console.log('Krop Photo button clicked!');
     console.log('Image:', !!image);
     console.log('Crop data:', cropData);
     console.log('Scale:', scale);
     
     if (!image || cropData.width === 0 || cropData.height === 0) {
-      console.log('❌ No image or crop area selected');
+      console.log('No image or crop area selected');
       alert('Please select an area to crop first!');
       return;
     }
 
     const canvas = previewCanvasRef.current;
     if (!canvas) {
-      console.log('❌ Preview canvas not found');
+      console.log('Preview canvas not found');
       return;
     }
 
@@ -543,7 +543,7 @@ export function PhotoCropperCard({
 
     const ctx = canvas.getContext('2d');
     if (!ctx) {
-      console.log('❌ Could not get canvas context');
+      console.log('Could not get canvas context');
       return;
     }
 
@@ -677,7 +677,7 @@ export function PhotoCropperCard({
         openUrl(dataUrl);
         
         sendNotification({
-          title: '📱 Image Opening!',
+          title: 'Image Opening!',
           body: 'Image will open in your browser where you can save it.'
         });
         
@@ -690,7 +690,7 @@ export function PhotoCropperCard({
         try {
           navigator.clipboard.writeText(croppedImageData).then(() => {
             sendNotification({
-              title: '📋 Image Copied!',
+              title: 'Image Copied!',
               body: 'Image data copied to clipboard. Paste in browser to view/save.'
             });
           });
@@ -749,7 +749,7 @@ export function PhotoCropperCard({
               <body>
                 <img src="${croppedImageData}" alt="Kropped Image" />
                 <div class="instructions">
-                  <strong>📱 Mobile Users:</strong><br>
+                  <strong>Mobile Users:</strong><br>
                   Long press the image above and select "Save to Photos" or "Download Image"
                 </div>
               </body>
@@ -758,7 +758,7 @@ export function PhotoCropperCard({
           newWindow.document.close();
           
           sendNotification({
-            title: '📱 Image Ready!',
+            title: 'Image Ready!',
             body: 'Long press the image to save to your device.'
           });
         } else {
@@ -788,7 +788,7 @@ export function PhotoCropperCard({
       }, 1000);
 
       sendNotification({
-        title: '📸 Photo Kropped!',
+        title: 'Photo Kropped!',
         body: 'Your photo has been successfully cropped and downloaded.'
       });
 
@@ -816,7 +816,7 @@ export function PhotoCropperCard({
             }, 1000);
 
             sendNotification({
-              title: '📸 Photo Kropped!',
+              title: 'Photo Kropped!',
               body: 'Your photo has been successfully cropped and downloaded.'
             });
           } else {
@@ -859,7 +859,7 @@ export function PhotoCropperCard({
     } catch (error) {
       console.error('Image upload failed:', error);
       sendNotification({
-        title: '❌ Upload Failed',
+        title: 'Upload Failed',
         body: 'Could not upload image. Try downloading instead.'
       });
       return null;
@@ -870,7 +870,7 @@ export function PhotoCropperCard({
   const shareToFarcaster = useCallback(async () => {
     if (!croppedImageData) {
       sendNotification({
-        title: '❌ No Image',
+        title: 'No Image',
         body: 'Please crop an image first!'
       });
       return;
@@ -887,14 +887,14 @@ export function PhotoCropperCard({
         try {
           const result = await sdk.actions.requestCast({
             cast: {
-              text: "Just kropped a perfect photo! 📸 Try Kroppit - the easiest photo crop tool for Farcaster:",
+              text: "Just kropped a perfect photo! Try Kroppit - the easiest photo crop tool for Farcaster:",
               embeds: [imageUrl]
             }
           });
           
           if (result.isSuccess) {
             sendNotification({
-              title: '🚀 Cast Sent!',
+              title: 'Cast Sent!',
               body: 'Your cropped image has been shared to Farcaster.'
             });
           } else {
@@ -904,12 +904,12 @@ export function PhotoCropperCard({
           console.log('Direct cast failed, falling back to Warpcast:', directCastError);
           
           // Fallback to Warpcast compose URL
-          const shareText = "Just kropped a perfect photo! 📸 Try Kroppit - the easiest photo crop tool for Farcaster:";
+          const shareText = "Just kropped a perfect photo! Try Kroppit - the easiest photo crop tool for Farcaster:";
           const shareUrl = `https://warpcast.com/~/compose?text=${encodeURIComponent(shareText)}&embeds[]=${encodeURIComponent(imageUrl)}`;
           openUrl(shareUrl);
           
           sendNotification({
-            title: '🚀 Ready to Share!',
+            title: 'Ready to Share!',
             body: 'Opening Farcaster with your cropped image.'
           });
         }
@@ -917,7 +917,7 @@ export function PhotoCropperCard({
     } catch (error) {
       console.error('Share to Farcaster error:', error);
       sendNotification({
-        title: '❌ Share Failed',
+        title: 'Share Failed',
         body: 'Could not share to Farcaster. Please try again.'
       });
     } finally {
@@ -927,7 +927,7 @@ export function PhotoCropperCard({
 
   // Unified handler for both mouse and touch events
   const handleStartDrag = useCallback((e: React.MouseEvent | React.TouchEvent) => {
-    console.log('🎯 Starting drag');
+    console.log('Starting drag');
     e.preventDefault();
     e.stopPropagation();
     
@@ -957,7 +957,7 @@ export function PhotoCropperCard({
     dragStartRef.current = pos;
     cropStartRef.current = { x: cropData.x, y: cropData.y, width: cropData.width, height: cropData.height };
     
-    console.log('🎯 Drag started at:', pos);
+    console.log('Drag started at:', pos);
   }, [cropData]);
 
   // Unified handler for resize start
