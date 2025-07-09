@@ -6,7 +6,7 @@
     "homeUrl": "https://kroppit.vercel.app",
     "imageUrl": "https://kroppit.vercel.app/icon.png",
     "splashImageUrl": "https://kroppit.vercel.app/splash.png",
-    "splashBackgroundColor": "#231c07",
+    "splashBackgroundColor": "#ffffff",
     "webhookUrl": "https://kroppit.vercel.app/api/webhook",
     "subtitle": "Perfect crops for Farcaster",
     "description": "Quick, easy, beautiful photo cropping tool designed specifically for Farcaster.",
