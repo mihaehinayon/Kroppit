@@ -157,11 +157,14 @@ export default function App() {
 
         {/* App Title */}
         <div className="text-center mb-6">
-          <img 
-            src="/logo-header.png" 
-            alt="Kroppit" 
-            className="mx-auto mb-6 h-16 w-auto"
-          />
+          <picture className="mx-auto mb-6 block">
+            <source srcSet="/logo-header-dark.png" media="(prefers-color-scheme: dark)" />
+            <img 
+              src="/logo-header.png" 
+              alt="Kroppit" 
+              className="h-16 w-auto"
+            />
+          </picture>
           {context && (
             <p className="text-xs text-[var(--app-foreground-muted)] mt-1">
               Welcome, {context.user?.displayName || 'User'}! 👋
