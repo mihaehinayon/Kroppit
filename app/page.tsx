@@ -157,10 +157,11 @@ export default function App() {
 
         {/* App Title */}
         <div className="text-center mb-6">
-          <h1 className="text-2xl font-bold text-[var(--app-foreground)] mb-2">📸 Kroppit</h1>
-          <p className="text-[var(--app-foreground-muted)] text-sm">
-            Perfect crops for Farcaster. Quick, easy, beautiful.
-          </p>
+          <img 
+            src="/logo-header.png" 
+            alt="Kroppit" 
+            className="mx-auto mb-6 h-16 w-auto"
+          />
           {context && (
             <p className="text-xs text-[var(--app-foreground-muted)] mt-1">
               Welcome, {context.user?.displayName || 'User'}! 👋
