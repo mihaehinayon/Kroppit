@@ -162,7 +162,7 @@ export default function App() {
             <img 
               src="/logo-header.png" 
               alt="Kroppit" 
-              className="h-16 w-auto"
+              className="h-16 w-auto mx-auto block"
             />
           </picture>
           {context && (
