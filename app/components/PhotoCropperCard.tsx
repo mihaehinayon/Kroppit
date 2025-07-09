@@ -1134,7 +1134,7 @@ export function PhotoCropperCard({
               </p>
             </div>
             {!isDragOver && (
-              <Button variant="primary" size="sm">
+              <Button variant="primary" size="sm" className="mt-4">
                 Choose File
               </Button>
             )}
