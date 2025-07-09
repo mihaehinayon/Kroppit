@@ -89,8 +89,8 @@ export default function App() {
 
     if (frameAdded) {
       return (
-        <div className="flex items-center space-x-1 text-sm font-medium text-[#0052FF] animate-fade-out">
-          <Icon name="check" size="sm" className="text-[#0052FF]" />
+        <div className="flex items-center space-x-1 text-sm font-medium text-[var(--app-accent)] animate-fade-out">
+          <Icon name="check" size="sm" className="text-[var(--app-accent)]" />
           <span>Added!</span>
         </div>
       );

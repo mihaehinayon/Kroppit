@@ -719,7 +719,7 @@ export function PhotoCropperCard({
                   body { 
                     margin: 0; 
                     padding: 20px; 
-                    background: #000; 
+                    background: var(--app-background); 
                     display: flex; 
                     flex-direction: column;
                     align-items: center; 
@@ -732,17 +732,17 @@ export function PhotoCropperCard({
                     max-height: 80vh; 
                     height: auto; 
                     border-radius: 8px;
-                    box-shadow: 0 4px 20px rgba(255,255,255,0.1);
+                    box-shadow: 0 4px 20px var(--app-overlay-light);
                   }
                   .instructions {
-                    color: white;
+                    color: var(--app-foreground);
                     text-align: center;
                     margin-top: 20px;
                     font-size: 16px;
                     opacity: 0.8;
                   }
                   .instructions strong {
-                    color: #4CAF50;
+                    color: var(--app-success);
                   }
                 </style>
               </head>
@@ -1281,15 +1281,16 @@ export function PhotoCropperCard({
                     <div
                       className="absolute inset-0 pointer-events-none"
                       style={{
-                        background: `radial-gradient(circle ${Math.min(cropData.width, cropData.height) / 2}px at ${cropData.x + cropData.width / 2}px ${cropData.y + cropData.height / 2}px, transparent ${Math.min(cropData.width, cropData.height) / 2}px, rgba(0,0,0,0.4) ${Math.min(cropData.width, cropData.height) / 2 + 1}px)`,
+                        background: `radial-gradient(circle ${Math.min(cropData.width, cropData.height) / 2}px at ${cropData.x + cropData.width / 2}px ${cropData.y + cropData.height / 2}px, transparent ${Math.min(cropData.width, cropData.height) / 2}px, var(--app-overlay) ${Math.min(cropData.width, cropData.height) / 2 + 1}px)`,
                         zIndex: 1
                       }}
                     />
                   ) : (
                     /* Rectangle overlay */
                     <div
-                      className="absolute inset-0 bg-black/40 pointer-events-none"
+                      className="absolute inset-0 pointer-events-none"
                       style={{
+                        backgroundColor: 'var(--app-overlay)',
                         clipPath: `polygon(
                           0% 0%, 
                           0% 100%, 

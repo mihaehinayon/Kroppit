@@ -39,7 +39,7 @@ export function Button({
   icon,
 }: ButtonProps) {
   const baseClasses =
-    "inline-flex items-center justify-center font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#0052FF] disabled:opacity-50 disabled:pointer-events-none";
+    "inline-flex items-center justify-center font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[var(--app-accent)] disabled:opacity-50 disabled:pointer-events-none";
 
   const variantClasses = {
     primary:
@@ -423,7 +423,7 @@ function TransactionCard() {
             href="https://onchainkit.xyz"
             target="_blank"
             rel="noopener noreferrer"
-            className="text-[#0052FF] hover:underline"
+            className="text-[var(--app-accent)] hover:underline"
           >
             OnchainKit
           </a>
