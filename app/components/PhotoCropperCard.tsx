@@ -126,7 +126,7 @@ export function PhotoCropperCard({
       } else if (isResizingRef.current) {
         const handle = resizeHandleRef.current;
         const startCrop = cropStartRef.current;
-        let newCrop = { ...startCrop };
+        const newCrop = { ...startCrop };
 
         const deltaX = pos.x - dragStartRef.current.x;
         const deltaY = pos.y - dragStartRef.current.y;
@@ -321,7 +321,7 @@ export function PhotoCropperCard({
           
           // Add native event listeners as backup
           const canvas = canvasRef.current;
-          const handleNativeMouseDown = (e: MouseEvent) => {
+          const handleNativeMouseDown = () => {
             console.log('NATIVE mouse down event triggered!');
           };
           
@@ -472,7 +472,7 @@ export function PhotoCropperCard({
   }, []);
 
   // Initialize crop area
-  const initializeCropArea = useCallback((img: HTMLImageElement) => {
+  const initializeCropArea = useCallback(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
@@ -485,25 +485,6 @@ export function PhotoCropperCard({
     setCropData({ x, y, width, height });
   }, []);
 
-  // Get mouse position relative to canvas
-  const getMousePos = useCallback((event: React.MouseEvent<HTMLCanvasElement>) => {
-    const canvas = canvasRef.current;
-    if (!canvas) return { x: 0, y: 0 };
-    
-    const rect = canvas.getBoundingClientRect();
-    return {
-      x: event.clientX - rect.left,
-      y: event.clientY - rect.top
-    };
-  }, []);
-
-  // Check if mouse is over crop area
-  const isMouseOverCrop = useCallback((mouseX: number, mouseY: number) => {
-    return mouseX >= cropData.x && 
-           mouseX <= cropData.x + cropData.width &&
-           mouseY >= cropData.y && 
-           mouseY <= cropData.y + cropData.height;
-  }, [cropData]);
 
 
   // Perform crop operation
@@ -1029,52 +1010,6 @@ export function PhotoCropperCard({
     setCropData({ x, y, width: finalWidth, height: finalHeight });
   }, [cropData, image]);
 
-  // Set crop position
-  const setCropPosition = useCallback((position: string) => {
-    const canvas = canvasRef.current;
-    if (!canvas || !image) return;
-
-    const { width, height } = cropData;
-    let x, y;
-
-    switch (position) {
-      case 'top-left':
-        x = 0; y = 0;
-        break;
-      case 'top-center':
-        x = (canvas.width - width) / 2; y = 0;
-        break;
-      case 'top-right':
-        x = canvas.width - width; y = 0;
-        break;
-      case 'center-left':
-        x = 0; y = (canvas.height - height) / 2;
-        break;
-      case 'center':
-        x = (canvas.width - width) / 2; y = (canvas.height - height) / 2;
-        break;
-      case 'center-right':
-        x = canvas.width - width; y = (canvas.height - height) / 2;
-        break;
-      case 'bottom-left':
-        x = 0; y = canvas.height - height;
-        break;
-      case 'bottom-center':
-        x = (canvas.width - width) / 2; y = canvas.height - height;
-        break;
-      case 'bottom-right':
-        x = canvas.width - width; y = canvas.height - height;
-        break;
-      default:
-        return;
-    }
-
-    // Ensure bounds
-    x = Math.max(0, Math.min(x, canvas.width - width));
-    y = Math.max(0, Math.min(y, canvas.height - height));
-    
-    setCropData({ x, y, width, height });
-  }, [cropData, image]);
 
   // Reset crop
   const resetCrop = useCallback(() => {
