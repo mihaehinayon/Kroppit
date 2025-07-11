@@ -810,38 +810,50 @@ export function PhotoCropperCard({
     }
   }, [croppedImageData, sendNotification, openUrl]);
 
-  // Upload image to temporary hosting
+  // Upload image to temporary hosting for casting
   const uploadImageToHost = useCallback(async (imageData: string): Promise<string | null> => {
     try {
-      // Convert base64 to blob
+      console.log('🔵 UPLOAD DEBUG: Starting upload process');
+      
+      // Convert base64 to blob for upload
       const response = await fetch(imageData);
       const blob = await response.blob();
+      console.log('🔵 UPLOAD DEBUG: Blob size:', blob.size);
       
-      // Upload to Cloudinary (free tier)
+      // Use server-side proxy to avoid CORS issues
+      console.log('🔵 UPLOAD DEBUG: Using server-side proxy...');
+      
       const formData = new FormData();
-      formData.append('file', blob);
-      formData.append('upload_preset', 'kroppit_uploads'); // Cloudinary unsigned preset
-      formData.append('folder', 'kroppit');
+      formData.append('image', blob, 'kropped-image.png');
       
-      const uploadResponse = await fetch(
-        'https://api.cloudinary.com/v1_1/demo/image/upload', // Using demo cloud for now
-        {
-          method: 'POST',
-          body: formData,
-        }
-      );
+      const uploadResponse = await fetch('/api/upload-image', {
+        method: 'POST',
+        body: formData,
+      });
+      
+      console.log('🔵 UPLOAD DEBUG: Proxy response status:', uploadResponse.status);
       
       if (!uploadResponse.ok) {
-        throw new Error('Upload failed');
+        const errorText = await uploadResponse.text();
+        console.log('🔵 UPLOAD DEBUG: Proxy error response:', errorText);
+        throw new Error(`Server upload failed: ${uploadResponse.status}`);
       }
       
       const result = await uploadResponse.json();
-      return result.secure_url;
+      console.log('🔵 UPLOAD DEBUG: Proxy result:', result);
+      
+      if (result.url) {
+        console.log('🔵 UPLOAD DEBUG: Server proxy success! URL:', result.url);
+        return result.url;
+      } else {
+        throw new Error('No URL returned from server');
+      }
+      
     } catch (error) {
-      console.error('Image upload failed:', error);
+      console.error('🔵 UPLOAD DEBUG: Upload failed:', error);
       sendNotification({
         title: 'Upload Failed',
-        body: 'Could not upload image. Try downloading instead.'
+        body: 'Could not upload image for casting.'
       });
       return null;
     }
