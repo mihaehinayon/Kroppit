@@ -18,14 +18,13 @@ export async function POST(request: NextRequest) {
     const bytes = await imageFile.arrayBuffer();
     const buffer = Buffer.from(bytes);
     
+    // Try Telegraph first (most reliable)
     console.log('📸 Attempting upload to Telegraph...');
     
-    // Create FormData for Telegraph upload
     const uploadFormData = new FormData();
     const blob = new Blob([buffer], { type: imageFile.type });
     uploadFormData.append('file', blob, imageFile.name || 'kropped-image.png');
     
-    // Upload to Telegraph (server-side, no CORS issues)
     const uploadResponse = await fetch('https://telegra.ph/upload', {
       method: 'POST',
       body: uploadFormData,
@@ -38,8 +37,8 @@ export async function POST(request: NextRequest) {
       const errorText = await uploadResponse.text();
       console.log('❌ Telegraph error response:', errorText);
       
-      // Fallback: Try Catbox
-      console.log('📸 Trying Catbox fallback...');
+      // Final fallback: Try Catbox
+      console.log('📸 Trying Catbox final fallback...');
       
       const catboxFormData = new FormData();
       catboxFormData.append('reqtype', 'fileupload');
@@ -53,7 +52,7 @@ export async function POST(request: NextRequest) {
       console.log('📸 Catbox response status:', catboxResponse.status);
       
       if (!catboxResponse.ok) {
-        throw new Error('Both upload services failed');
+        throw new Error('All upload services failed');
       }
       
       const catboxResult = await catboxResponse.text();

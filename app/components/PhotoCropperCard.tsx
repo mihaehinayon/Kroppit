@@ -891,10 +891,19 @@ export function PhotoCropperCard({
         try {
           console.log('🎯 CAST DEBUG: Attempting in-app cast with Frame SDK...');
           
+          // Test 1: Try with our hosted image URL
           const castData = {
             text: "Just cropped the perfect photo with Kroppit! 📸✨\n\nTry it yourself - the easiest photo crop tool for Farcaster:",
             embeds: [imageUrl]
           };
+          
+          // Test 2: Also try with the original data URL as backup
+          const dataUrlCastData = {
+            text: "Just cropped the perfect photo with Kroppit! 📸✨\n\nTry it yourself - the easiest photo crop tool for Farcaster:",
+            embeds: [croppedImageData] // Original base64 data URL
+          };
+          
+          console.log('🎯 CAST DEBUG: Will try hosted URL first, then data URL if needed');
           
           console.log('🎯 CAST DEBUG: Cast data prepared:', castData);
           console.log('🎯 CAST DEBUG: SDK available:', typeof sdk);
@@ -923,7 +932,32 @@ export function PhotoCropperCard({
             console.log('🎯 CAST DEBUG: Image URL test failed:', testError);
           }
           
-          const result = await sdk.actions.composeCast(composeCastParams);
+          // Test with a known working image URL first to see if the issue is the URL or the API
+          const testParams = {
+            text: castData.text,
+            embeds: ["https://i.imgur.com/test.png"] // Test with a known image hosting service
+          };
+          
+          console.log('🎯 CAST DEBUG: Testing with known URL first...');
+          
+          // Try with hosted image URL first
+          console.log('🎯 CAST DEBUG: Trying with hosted image URL...');
+          let result = await sdk.actions.composeCast(composeCastParams);
+          
+          console.log('🎯 CAST DEBUG: Hosted URL result:', result);
+          
+          // If hosted URL doesn't work, try with data URL
+          if (!result.isSuccess) {
+            console.log('🎯 CAST DEBUG: Hosted URL failed, trying data URL...');
+            const dataUrlParams = {
+              text: castData.text,
+              embeds: [croppedImageData]
+            };
+            console.log('🎯 CAST DEBUG: Data URL params:', JSON.stringify(dataUrlParams, null, 2));
+            
+            result = await sdk.actions.composeCast(dataUrlParams);
+            console.log('🎯 CAST DEBUG: Data URL result:', result);
+          }
           
           console.log('🎯 CAST DEBUG: Direct cast result:', result);
           
