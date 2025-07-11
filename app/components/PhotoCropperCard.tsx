@@ -887,49 +887,54 @@ export function PhotoCropperCard({
       if (imageUrl) {
         console.log('🎯 CAST DEBUG: Attempting direct cast with Farcaster Frame SDK...');
         
-        // Try direct casting with Farcaster Frame SDK
+        // Try direct casting with Farcaster Frame SDK - stay within same window
         try {
+          console.log('🎯 CAST DEBUG: Attempting in-app cast with Frame SDK...');
+          
           const castData = {
-            cast: {
-              text: "Just cropped the perfect photo with Kroppit! 📸✨\n\nTry it yourself - the easiest photo crop tool for Farcaster:",
-              embeds: [imageUrl]
-            }
+            text: "Just cropped the perfect photo with Kroppit! 📸✨\n\nTry it yourself - the easiest photo crop tool for Farcaster:",
+            embeds: [imageUrl]
           };
           
           console.log('🎯 CAST DEBUG: Cast data prepared:', castData);
           console.log('🎯 CAST DEBUG: SDK available:', typeof sdk);
-          console.log('🎯 CAST DEBUG: SDK actions available:', typeof sdk.actions);
-          console.log('🎯 CAST DEBUG: requestCast available:', typeof sdk.actions.requestCast);
+          console.log('🎯 CAST DEBUG: SDK actions available:', typeof sdk?.actions);
+          console.log('🎯 CAST DEBUG: requestCast available:', typeof sdk?.actions?.requestCast);
           
-          const result = await sdk.actions.requestCast(castData);
+          // Use the Frame SDK to cast directly within the Mini App
+          const result = await sdk.actions.requestCast({
+            cast: castData
+          });
+          
           console.log('🎯 CAST DEBUG: Direct cast result:', result);
           
           if (result.isSuccess) {
-            console.log('🎯 CAST DEBUG: Direct cast successful!');
+            console.log('🎯 CAST DEBUG: In-app cast successful!');
             sendNotification({
-              title: 'Cast Published!',
-              body: 'Your cropped image has been successfully shared to Farcaster.'
+              title: 'Cast Published! 🎉',
+              body: 'Your cropped image has been shared to Farcaster successfully.'
             });
+            
+            // Reset the UI to allow for new cropping
+            setShowPreview(false);
+            setCroppedImageData(null);
+            setShowCroppedResult(false);
+            
             return; // Success - exit early
           } else {
-            console.log('🎯 CAST DEBUG: Direct cast failed with error:', result.error);
-            throw new Error(result.error?.message || 'Direct cast failed');
+            console.log('🎯 CAST DEBUG: In-app cast failed with error:', result.error);
+            throw new Error(result.error?.message || 'Frame SDK cast failed');
           }
         } catch (directCastError) {
-          console.log('🎯 CAST DEBUG: Direct cast failed, falling back to Warpcast:', directCastError);
+          console.error('🎯 CAST DEBUG: Frame SDK cast failed:', directCastError);
           
-          // Fallback to Warpcast compose URL
-          const shareText = "Just cropped the perfect photo with Kroppit! 📸✨\n\nTry it yourself - the easiest photo crop tool for Farcaster:";
-          const shareUrl = `https://warpcast.com/~/compose?text=${encodeURIComponent(shareText)}&embeds[]=${encodeURIComponent(imageUrl)}`;
-          
-          console.log('🎯 CAST DEBUG: Opening Warpcast compose URL:', shareUrl);
-          
-          openUrl(shareUrl);
-          
+          // Show error to user - don't fall back to external window
           sendNotification({
-            title: 'Opening Warpcast',
-            body: 'Direct cast unavailable. Opening Warpcast to complete your cast.'
+            title: 'Cast Failed',
+            body: 'Unable to cast directly. Please try again or check your connection.'
           });
+          
+          throw directCastError; // Re-throw to be caught by outer try-catch
         }
       } else {
         throw new Error('Failed to upload image - no URL returned');
@@ -1374,7 +1379,7 @@ export function PhotoCropperCard({
                 Publishing Cast...
               </div>
             ) : (
-              'Cast to Farcaster'
+              'Share on Farcaster'
             )}
           </Button>
         )}
