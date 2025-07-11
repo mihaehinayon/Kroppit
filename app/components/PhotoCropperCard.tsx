@@ -911,11 +911,21 @@ export function PhotoCropperCard({
           console.log('🎯 CAST DEBUG: composeCast available:', typeof sdk?.actions?.composeCast);
           console.log('🎯 CAST DEBUG: Available actions:', Object.keys(sdk?.actions || {}));
           
-          // Use the correct composeCast API for Farcaster Mini Apps
+          // Use the correct composeCast API for Farcaster Mini Apps - match exact documentation format
           const composeCastParams = {
             text: castData.text,
-            embeds: castData.embeds
+            embeds: castData.embeds,
+            // channelKey: "farcaster" // Optional - try without first
           };
+          
+          // Also try the exact format from documentation
+          const docExampleParams = {
+            text: "Just cropped the perfect photo with Kroppit! 📸✨\n\nTry it yourself - the easiest photo crop tool for Farcaster:",
+            embeds: [imageUrl]
+          };
+          
+          console.log('🎯 CAST DEBUG: URL ends with .png:', imageUrl.endsWith('.png'));
+          console.log('🎯 CAST DEBUG: URL matches supported format:', /\.(png|jpg|gif)$/i.test(imageUrl));
           
           console.log('🎯 CAST DEBUG: ComposeCast params:', JSON.stringify(composeCastParams, null, 2));
           console.log('🎯 CAST DEBUG: Image URL being passed:', castData.embeds[0]);
@@ -942,12 +952,36 @@ export function PhotoCropperCard({
           
           // Try with hosted image URL first
           console.log('🎯 CAST DEBUG: Trying with hosted image URL...');
-          let result = await sdk.actions.composeCast(composeCastParams);
           
-          console.log('🎯 CAST DEBUG: Hosted URL result:', result);
+          let result;
+          try {
+            // Add timeout to catch hanging calls
+            const composeCastPromise = sdk.actions.composeCast(composeCastParams);
+            const timeoutPromise = new Promise((_, reject) => 
+              setTimeout(() => reject(new Error('ComposeCast timeout')), 10000)
+            );
+            
+            result = await Promise.race([composeCastPromise, timeoutPromise]);
+            console.log('🎯 CAST DEBUG: Hosted URL result:', result);
+            console.log('🎯 CAST DEBUG: Result type:', typeof result);
+            console.log('🎯 CAST DEBUG: Result keys:', Object.keys(result || {}));
+          } catch (castError) {
+            console.error('🎯 CAST DEBUG: ComposeCast error:', castError);
+            result = { isSuccess: false, error: castError };
+          }
           
-          // If hosted URL doesn't work, try with data URL
-          if (!result.isSuccess) {
+          // If the call succeeded but we need to test different embed formats
+          if (result.isSuccess) {
+            console.log('🎯 CAST DEBUG: ComposeCast succeeded but image may not have appeared');
+            console.log('🎯 CAST DEBUG: Let\'s try different embed formats...');
+            
+            // Try with just the URL as a string instead of array
+            const stringEmbedParams = {
+              text: castData.text + "\n\nImage: " + imageUrl,
+              // Try without embeds to see if text-only works
+            };
+            console.log('🎯 CAST DEBUG: Testing text-only version...');
+          } else {
             console.log('🎯 CAST DEBUG: Hosted URL failed, trying data URL...');
             const dataUrlParams = {
               text: castData.text,
@@ -955,8 +989,12 @@ export function PhotoCropperCard({
             };
             console.log('🎯 CAST DEBUG: Data URL params:', JSON.stringify(dataUrlParams, null, 2));
             
-            result = await sdk.actions.composeCast(dataUrlParams);
-            console.log('🎯 CAST DEBUG: Data URL result:', result);
+            try {
+              result = await sdk.actions.composeCast(dataUrlParams);
+              console.log('🎯 CAST DEBUG: Data URL result:', result);
+            } catch (dataUrlError) {
+              console.error('🎯 CAST DEBUG: Data URL error:', dataUrlError);
+            }
           }
           
           console.log('🎯 CAST DEBUG: Direct cast result:', result);
