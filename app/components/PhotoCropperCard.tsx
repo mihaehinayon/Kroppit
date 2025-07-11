@@ -903,10 +903,27 @@ export function PhotoCropperCard({
           console.log('🎯 CAST DEBUG: Available actions:', Object.keys(sdk?.actions || {}));
           
           // Use the correct composeCast API for Farcaster Mini Apps
-          const result = await sdk.actions.composeCast({
+          const composeCastParams = {
             text: castData.text,
             embeds: castData.embeds
-          });
+          };
+          
+          console.log('🎯 CAST DEBUG: ComposeCast params:', JSON.stringify(composeCastParams, null, 2));
+          console.log('🎯 CAST DEBUG: Image URL being passed:', castData.embeds[0]);
+          console.log('🎯 CAST DEBUG: URL is valid:', castData.embeds[0].startsWith('http'));
+          console.log('🎯 CAST DEBUG: URL type:', typeof castData.embeds[0]);
+          console.log('🎯 CAST DEBUG: Embeds array length:', castData.embeds.length);
+          
+          // Test the URL by trying to fetch it
+          try {
+            const testResponse = await fetch(castData.embeds[0], { method: 'HEAD' });
+            console.log('🎯 CAST DEBUG: Image URL is accessible:', testResponse.ok);
+            console.log('🎯 CAST DEBUG: Image content-type:', testResponse.headers.get('content-type'));
+          } catch (testError) {
+            console.log('🎯 CAST DEBUG: Image URL test failed:', testError);
+          }
+          
+          const result = await sdk.actions.composeCast(composeCastParams);
           
           console.log('🎯 CAST DEBUG: Direct cast result:', result);
           
