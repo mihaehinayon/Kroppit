@@ -1318,29 +1318,18 @@ export function PhotoCropperCard({
           style={{ display: 'none' }}
         />
         
-        {/* Download/Share buttons - show after cropping */}
+        {/* Share button - show after cropping */}
         {showPreview && (
-          <div className="flex gap-2">
-            <Button
-              onClick={downloadImage}
-              variant="primary"
-              size="sm"
-              className="flex-1"
-              icon={<Icon name="arrow-right" size="sm" />}
-            >
-              Download
-            </Button>
-            <Button
-              onClick={shareToFarcaster}
-              variant="outline"
-              size="sm"
-              className="flex-1"
-              icon={<Icon name="star" size="sm" />}
-              disabled={isProcessing}
-            >
-              {isProcessing ? 'Casting...' : 'Cast to Farcaster'}
-            </Button>
-          </div>
+          <Button
+            onClick={shareToFarcaster}
+            variant="primary"
+            size="sm"
+            className="w-full"
+            icon={<Icon name="star" size="sm" />}
+            disabled={isProcessing}
+          >
+            {isProcessing ? 'Casting...' : 'Cast to Farcaster'}
+          </Button>
         )}
 
 
