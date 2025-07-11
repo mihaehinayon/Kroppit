@@ -899,20 +899,22 @@ export function PhotoCropperCard({
           console.log('🎯 CAST DEBUG: Cast data prepared:', castData);
           console.log('🎯 CAST DEBUG: SDK available:', typeof sdk);
           console.log('🎯 CAST DEBUG: SDK actions available:', typeof sdk?.actions);
-          console.log('🎯 CAST DEBUG: requestCast available:', typeof sdk?.actions?.requestCast);
+          console.log('🎯 CAST DEBUG: composeCast available:', typeof sdk?.actions?.composeCast);
+          console.log('🎯 CAST DEBUG: Available actions:', Object.keys(sdk?.actions || {}));
           
-          // Use the Frame SDK to cast directly within the Mini App
-          const result = await sdk.actions.requestCast({
-            cast: castData
+          // Use the correct composeCast API for Farcaster Mini Apps
+          const result = await sdk.actions.composeCast({
+            text: castData.text,
+            embeds: castData.embeds
           });
           
           console.log('🎯 CAST DEBUG: Direct cast result:', result);
           
           if (result.isSuccess) {
-            console.log('🎯 CAST DEBUG: In-app cast successful!');
+            console.log('🎯 CAST DEBUG: Compose cast opened successfully!');
             sendNotification({
-              title: 'Cast Published! 🎉',
-              body: 'Your cropped image has been shared to Farcaster successfully.'
+              title: 'Cast Composer Opened! 🎉',
+              body: 'Your cropped image is ready to share. Complete your cast in the composer.'
             });
             
             // Reset the UI to allow for new cropping
@@ -922,8 +924,8 @@ export function PhotoCropperCard({
             
             return; // Success - exit early
           } else {
-            console.log('🎯 CAST DEBUG: In-app cast failed with error:', result.error);
-            throw new Error(result.error?.message || 'Frame SDK cast failed');
+            console.log('🎯 CAST DEBUG: Compose cast failed with error:', result.error);
+            throw new Error(result.error?.message || 'ComposeCast failed');
           }
         } catch (directCastError) {
           console.error('🎯 CAST DEBUG: Frame SDK cast failed:', directCastError);
