@@ -857,52 +857,80 @@ export function PhotoCropperCard({
       return;
     }
 
+    console.log('🎯 CAST DEBUG: Starting Farcaster cast process...');
     setIsProcessing(true);
     
+    // Show initial loading notification
+    sendNotification({
+      title: 'Preparing Cast...',
+      body: 'Uploading your cropped image to Farcaster...'
+    });
+    
     try {
+      console.log('🎯 CAST DEBUG: Uploading image to get public URL...');
       // Upload image and get URL
       const imageUrl = await uploadImageToHost(croppedImageData);
+      console.log('🎯 CAST DEBUG: Image upload result:', imageUrl ? 'Success' : 'Failed');
       
       if (imageUrl) {
+        console.log('🎯 CAST DEBUG: Attempting direct cast with Farcaster Frame SDK...');
+        
         // Try direct casting with Farcaster Frame SDK
         try {
-          const result = await sdk.actions.requestCast({
+          const castData = {
             cast: {
-              text: "Just kropped a perfect photo! Try Kroppit - the easiest photo crop tool for Farcaster:",
+              text: "Just cropped the perfect photo with Kroppit! 📸✨\n\nTry it yourself - the easiest photo crop tool for Farcaster:",
               embeds: [imageUrl]
             }
-          });
+          };
+          
+          console.log('🎯 CAST DEBUG: Cast data prepared:', castData);
+          console.log('🎯 CAST DEBUG: SDK available:', typeof sdk);
+          console.log('🎯 CAST DEBUG: SDK actions available:', typeof sdk.actions);
+          console.log('🎯 CAST DEBUG: requestCast available:', typeof sdk.actions.requestCast);
+          
+          const result = await sdk.actions.requestCast(castData);
+          console.log('🎯 CAST DEBUG: Direct cast result:', result);
           
           if (result.isSuccess) {
+            console.log('🎯 CAST DEBUG: Direct cast successful!');
             sendNotification({
-              title: 'Cast Sent!',
-              body: 'Your cropped image has been shared to Farcaster.'
+              title: 'Cast Published!',
+              body: 'Your cropped image has been successfully shared to Farcaster.'
             });
+            return; // Success - exit early
           } else {
-            throw new Error(result.error?.message || 'Failed to cast');
+            console.log('🎯 CAST DEBUG: Direct cast failed with error:', result.error);
+            throw new Error(result.error?.message || 'Direct cast failed');
           }
         } catch (directCastError) {
-          console.log('Direct cast failed, falling back to Warpcast:', directCastError);
+          console.log('🎯 CAST DEBUG: Direct cast failed, falling back to Warpcast:', directCastError);
           
           // Fallback to Warpcast compose URL
-          const shareText = "Just kropped a perfect photo! Try Kroppit - the easiest photo crop tool for Farcaster:";
+          const shareText = "Just cropped the perfect photo with Kroppit! 📸✨\n\nTry it yourself - the easiest photo crop tool for Farcaster:";
           const shareUrl = `https://warpcast.com/~/compose?text=${encodeURIComponent(shareText)}&embeds[]=${encodeURIComponent(imageUrl)}`;
+          
+          console.log('🎯 CAST DEBUG: Opening Warpcast compose URL:', shareUrl);
+          
           openUrl(shareUrl);
           
           sendNotification({
-            title: 'Ready to Share!',
-            body: 'Opening Farcaster with your cropped image.'
+            title: 'Opening Warpcast',
+            body: 'Direct cast unavailable. Opening Warpcast to complete your cast.'
           });
         }
+      } else {
+        throw new Error('Failed to upload image - no URL returned');
       }
     } catch (error) {
-      console.error('Share to Farcaster error:', error);
+      console.error('🎯 CAST DEBUG: Share to Farcaster error:', error);
       sendNotification({
-        title: 'Share Failed',
-        body: 'Could not share to Farcaster. Please try again.'
+        title: 'Cast Failed',
+        body: `Could not share to Farcaster: ${error.message || 'Unknown error'}`
       });
     } finally {
       setIsProcessing(false);
+      console.log('🎯 CAST DEBUG: Cast process completed.');
     }
   }, [croppedImageData, uploadImageToHost, openUrl, sendNotification]);
 
@@ -1325,10 +1353,17 @@ export function PhotoCropperCard({
             variant="primary"
             size="sm"
             className="w-full"
-            icon={<Icon name="star" size="sm" />}
+            icon={isProcessing ? undefined : <Icon name="star" size="sm" />}
             disabled={isProcessing}
           >
-            {isProcessing ? 'Casting...' : 'Cast to Farcaster'}
+            {isProcessing ? (
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                Publishing Cast...
+              </div>
+            ) : (
+              'Cast to Farcaster'
+            )}
           </Button>
         )}
 
