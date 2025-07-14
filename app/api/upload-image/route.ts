@@ -60,7 +60,7 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// Pinata - IPFS hosting with folder upload for file extension URLs
+// Pinata - IPFS hosting with fileArray for folder structure and file extensions
 async function uploadToPinata(buffer: Buffer, mimeType: string) {
   // Check if Pinata is configured
   if (!process.env.PINATA_JWT) {
@@ -76,54 +76,48 @@ async function uploadToPinata(buffer: Buffer, mimeType: string) {
   const filename = `cropped_image.${extension}`;
   const uniqueId = uuidv4();
   
-  // Create temporary folder structure
-  const tempDir = path.join(os.tmpdir(), `kroppit-${uniqueId}`);
-  fs.mkdirSync(tempDir, { recursive: true });
-  
   try {
-    // Save image to temporary folder with proper filename
-    const filePath = path.join(tempDir, filename);
-    fs.writeFileSync(filePath, buffer);
+    console.log(`📄 Creating folder structure with file: ${filename}`);
     
-    console.log(`📁 Created temporary folder: ${tempDir}`);
-    console.log(`📄 Saved image as: ${filename}`);
+    // Create File object from buffer with proper filename
+    const blob = new Blob([buffer], { type: mimeType });
+    const imageFile = new File([blob], filename, { type: mimeType });
     
-    // Upload folder to Pinata using pinFromFS
-    const options = {
-      pinataMetadata: {
-        name: `Kroppit Image ${uniqueId}`,
-        keyvalues: {
-          app: 'kroppit',
-          type: 'cropped-image',
-          timestamp: Date.now().toString()
-        }
-      },
-      pinataOptions: {
-        cidVersion: 0
-      }
-    };
+    // Create a dummy file to create folder structure (required for folder CID)
+    const metadataBlob = new Blob([JSON.stringify({
+      app: 'kroppit',
+      type: 'cropped-image',
+      timestamp: Date.now(),
+      id: uniqueId
+    })], { type: 'application/json' });
+    const metadataFile = new File([metadataBlob], 'metadata.json', { type: 'application/json' });
     
+    // Upload as fileArray to create folder structure
     console.log('📤 Uploading folder to Pinata...');
-    const result = await pinata.pinFromFS(tempDir, options);
-    const folderCID = result.IpfsHash;
+    const result = await pinata.upload.public.fileArray([imageFile, metadataFile]);
     
-    // Construct URL with file extension
+    console.log(`📊 Upload result:`, result);
+    
+    // The result should contain the CID for the folder
+    const folderCid = result.cid || result.IpfsHash;
+    
+    if (!folderCid) {
+      throw new Error('No CID returned from Pinata folder upload');
+    }
+    
+    // Construct URL with file extension using folder CID + filename
     const gateway = process.env.PINATA_GATEWAY || "gateway.pinata.cloud";
-    const imageUrl = `https://${gateway}/ipfs/${folderCID}/${filename}`;
+    const imageUrl = `https://${gateway}/ipfs/${folderCid}/${filename}`;
     
     console.log(`✅ Pinata upload successful: ${imageUrl}`);
-    console.log(`📊 Folder CID: ${folderCID}`);
+    console.log(`📊 Folder CID: ${folderCid}`);
+    console.log(`🎯 URL with file extension: ${filename}`);
+    
     return { success: true, url: imageUrl };
     
   } catch (error) {
     console.error('❌ Pinata upload failed:', error);
     throw error;
-  } finally {
-    // Clean up temporary files
-    if (fs.existsSync(tempDir)) {
-      fs.rmSync(tempDir, { recursive: true, force: true });
-      console.log(`🗑️ Cleaned up temporary folder: ${tempDir}`);
-    }
   }
 }
 
