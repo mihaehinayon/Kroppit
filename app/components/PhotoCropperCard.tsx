@@ -907,100 +907,68 @@ export function PhotoCropperCard({
       console.log('🎯 CAST DEBUG: Image upload result:', imageUrl ? 'Success' : 'Failed');
       
       if (imageUrl) {
-        console.log('🎯 CAST DEBUG: Creating share URL with Frame metadata...');
+        console.log('🎯 CAST DEBUG: Using composeCast API with direct image URL...');
         
-        // Create share URL with proper Frame metadata
-        try {
-          console.log('🎯 CAST DEBUG: Generating share URL for image...');
-          
-          // Create share URL that contains proper og:image and fc:frame metadata
-          const shareResponse = await fetch('/api/create-share', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ imageUrl })
-          });
-          
-          if (!shareResponse.ok) {
-            throw new Error('Failed to create share URL');
-          }
-          
-          const { shareUrl } = await shareResponse.json();
-          console.log('🎯 CAST DEBUG: Share URL created:', shareUrl);
-          
-          // Use composeCast API (official recommended approach)
-          console.log('🎯 CAST DEBUG: Using composeCast API with IPFS image...');
-          
-          const castData = {
-            text: "Just cropped the perfect photo with Kroppit! 📸✨\n\nTry it yourself - the easiest photo crop tool for Farcaster:",
-            embeds: [
-              {
-                url: imageUrl
-              }
-            ]
-          };
-          
-          console.log('🎯 CAST DEBUG: Cast data:', castData);
-          console.log('🎯 CAST DEBUG: Image URL ends with .png:', imageUrl.endsWith('.png'));
-          console.log('🎯 CAST DEBUG: SDK available:', typeof sdk);
-          console.log('🎯 CAST DEBUG: composeCast available:', typeof sdk?.actions?.composeCast);
-          
-          try {
-            // Use the official composeCast API from Farcaster Mini App SDK
-            console.log('🎯 CAST DEBUG: Calling composeCast...');
-            console.log('🎯 CAST DEBUG: Cast data being sent:', castData);
-            
-            // Let the SDK handle timeouts naturally - don't add artificial timeout
-            const result = await sdk.actions.composeCast(castData);
-            
-            console.log('🎯 CAST DEBUG: composeCast result:', result);
-            
-            if (result) {
-              console.log('🎯 CAST DEBUG: Cast created successfully!');
-              sendNotification({
-                title: 'Cast Created! 🎉',
-                body: 'Your cropped image has been shared to Farcaster!'
-              });
-            } else {
-              console.log('🎯 CAST DEBUG: User cancelled cast');
-              sendNotification({
-                title: 'Cast Cancelled',
-                body: 'Cast creation was cancelled by user.'
-              });
+        const castData = {
+          text: "Just cropped the perfect photo with Kroppit! 📸✨\n\nTry it yourself - the easiest photo crop tool for Farcaster:",
+          embeds: [
+            {
+              url: imageUrl
             }
-            
-            // Reset the UI to allow for new cropping
-            setShowPreview(false);
-            setCroppedImageData(null);
-            setShowCroppedResult(false);
-            
-            return; // Success - exit early
-            
-          } catch (composeCastError) {
-            console.error('🎯 CAST DEBUG: composeCast error:', composeCastError);
-            
-            // For mini apps, composeCast is the proper approach - no fallback needed
-            // The timeout suggests an infrastructure issue that should be resolved
-            console.log('🎯 CAST DEBUG: composeCast is the recommended approach for mini apps');
-            console.log('🎯 CAST DEBUG: Timeout suggests infrastructure issue, not implementation problem');
-            
-            // Show helpful error to user
-            sendNotification({
-              title: 'Cast Timed Out',
-              body: 'The cast composer is having issues. Please try again in a moment.'
-            });
-            
-            throw composeCastError; // Re-throw to be caught by outer try-catch
-          }
-        } catch (castError) {
-          console.error('🎯 CAST DEBUG: composeCast failed:', castError);
+          ]
+        };
+        
+        console.log('🎯 CAST DEBUG: Cast data:', castData);
+        console.log('🎯 CAST DEBUG: Image URL ends with .png:', imageUrl.endsWith('.png'));
+        console.log('🎯 CAST DEBUG: SDK available:', typeof sdk);
+        console.log('🎯 CAST DEBUG: composeCast available:', typeof sdk?.actions?.composeCast);
+        
+        try {
+          // Use the official composeCast API from Farcaster Mini App SDK
+          console.log('🎯 CAST DEBUG: Calling composeCast...');
+          console.log('🎯 CAST DEBUG: Cast data being sent:', castData);
           
-          // Show error to user
+          // Let the SDK handle timeouts naturally - don't add artificial timeout
+          const result = await sdk.actions.composeCast(castData);
+          
+          console.log('🎯 CAST DEBUG: composeCast result:', result);
+          
+          if (result) {
+            console.log('🎯 CAST DEBUG: Cast created successfully!');
+            sendNotification({
+              title: 'Cast Created! 🎉',
+              body: 'Your cropped image has been shared to Farcaster!'
+            });
+          } else {
+            console.log('🎯 CAST DEBUG: User cancelled cast');
+            sendNotification({
+              title: 'Cast Cancelled',
+              body: 'Cast creation was cancelled by user.'
+            });
+          }
+          
+          // Reset the UI to allow for new cropping
+          setShowPreview(false);
+          setCroppedImageData(null);
+          setShowCroppedResult(false);
+          
+          return; // Success - exit early
+          
+        } catch (composeCastError) {
+          console.error('🎯 CAST DEBUG: composeCast error:', composeCastError);
+          
+          // For mini apps, composeCast is the proper approach - no fallback needed
+          // The timeout suggests an infrastructure issue that should be resolved
+          console.log('🎯 CAST DEBUG: composeCast is the recommended approach for mini apps');
+          console.log('🎯 CAST DEBUG: Timeout suggests infrastructure issue, not implementation problem');
+          
+          // Show helpful error to user
           sendNotification({
-            title: 'Cast Failed',
-            body: 'Unable to create cast. Please try again.'
+            title: 'Cast Timed Out',
+            body: 'The cast composer is having issues. Please try again in a moment.'
           });
           
-          throw castError; // Re-throw to be caught by outer try-catch
+          throw composeCastError; // Re-throw to be caught by outer try-catch
         }
       } else {
         throw new Error('Failed to upload image - no URL returned');
