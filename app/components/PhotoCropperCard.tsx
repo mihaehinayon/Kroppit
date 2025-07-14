@@ -933,11 +933,16 @@ export function PhotoCropperCard({
           console.log('🎯 CAST DEBUG: URL type:', typeof castData.embeds[0]);
           console.log('🎯 CAST DEBUG: Embeds array length:', castData.embeds.length);
           
-          // Test the URL by trying to fetch it
+          // Test the URL by trying to fetch it and check CORS headers
           try {
             const testResponse = await fetch(castData.embeds[0], { method: 'HEAD' });
             console.log('🎯 CAST DEBUG: Image URL is accessible:', testResponse.ok);
             console.log('🎯 CAST DEBUG: Image content-type:', testResponse.headers.get('content-type'));
+            console.log('🎯 CAST DEBUG: CORS headers:', {
+              'access-control-allow-origin': testResponse.headers.get('access-control-allow-origin'),
+              'access-control-allow-methods': testResponse.headers.get('access-control-allow-methods'),
+              'access-control-allow-headers': testResponse.headers.get('access-control-allow-headers'),
+            });
           } catch (testError) {
             console.log('🎯 CAST DEBUG: Image URL test failed:', testError);
           }

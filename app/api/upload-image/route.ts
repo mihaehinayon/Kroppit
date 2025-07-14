@@ -37,6 +37,32 @@ export async function POST(request: NextRequest) {
       const errorText = await uploadResponse.text();
       console.log('❌ Telegraph error response:', errorText);
       
+      // Try Cloudinary (known good CORS)
+      console.log('📸 Trying Cloudinary with CORS support...');
+      
+      const cloudinaryFormData = new FormData();
+      cloudinaryFormData.append('file', blob);
+      cloudinaryFormData.append('upload_preset', 'ml_default'); // Public preset
+      
+      const cloudinaryResponse = await fetch(
+        'https://api.cloudinary.com/v1_1/demo/image/upload',
+        {
+          method: 'POST',
+          body: cloudinaryFormData,
+        }
+      );
+      
+      console.log('📸 Cloudinary response status:', cloudinaryResponse.status);
+      
+      if (cloudinaryResponse.ok) {
+        const cloudinaryResult = await cloudinaryResponse.json();
+        console.log('📸 Cloudinary result:', cloudinaryResult);
+        
+        if (cloudinaryResult.secure_url) {
+          return NextResponse.json({ url: cloudinaryResult.secure_url });
+        }
+      }
+      
       // Final fallback: Try Catbox
       console.log('📸 Trying Catbox final fallback...');
       

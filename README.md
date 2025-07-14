@@ -1,112 +1,219 @@
-# MiniKit Template
+# 📸 Kroppit - Photo Cropping Mini App
 
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-onchain --mini`](), configured with:
+A professional photo cropping Mini App built for Farcaster that lets users crop images and share them directly to their feed.
 
-- [MiniKit](https://docs.base.org/builderkits/minikit/overview)
-- [OnchainKit](https://www.base.org/builders/onchainkit)
-- [Tailwind CSS](https://tailwindcss.com)
-- [Next.js](https://nextjs.org/docs)
+## ✨ What Kroppit Does
 
-## Getting Started
+**Kroppit** makes photo cropping simple and social:
 
-1. Install dependencies:
+- 📱 **Upload photos** - Drag & drop or click to upload any image
+- ✂️ **Crop with precision** - Select exactly the area you want to keep
+- 🎯 **Multiple crop shapes** - Rectangle, square, landscape, portrait, or circle
+- 📤 **Share to Farcaster** - One-click sharing with automatic image hosting
+- 🔗 **Wallet integration** - Connect with Coinbase Wallet, MetaMask, or WalletConnect
+- 📱 **Mobile-friendly** - Works perfectly on all devices
+
+## 🚀 Live Demo
+
+Try Kroppit in your Farcaster app or visit the web version to see it in action!
+
+## 🛠️ Built With
+
+- **[Next.js 15](https://nextjs.org/)** - React framework
+- **[Farcaster MiniKit](https://docs.base.org/builderkits/minikit/overview)** - Mini App framework
+- **[OnchainKit](https://www.base.org/builders/onchainkit)** - Coinbase's React components
+- **[Wagmi](https://wagmi.sh/)** - Wallet connection
+- **[Tailwind CSS](https://tailwindcss.com/)** - Styling
+- **[TypeScript](https://www.typescriptlang.org/)** - Type safety
+
+## 🎯 Key Features
+
+### Photo Cropping Engine
+- **Canvas-based processing** - Precise image manipulation using HTML5 Canvas
+- **Interactive selection** - Click and drag to select crop areas
+- **Real-time preview** - See exactly what your crop will look like
+- **Multiple aspect ratios** - Choose from preset shapes or create custom crops
+
+### Farcaster Integration
+- **Mini App native** - Built specifically for the Farcaster ecosystem
+- **Direct sharing** - Share cropped images straight to your Farcaster feed
+- **Auto image hosting** - Images are automatically uploaded and embedded
+- **Frame metadata** - Proper Mini App discovery and sharing
+
+### Wallet Support
+- **Multiple wallets** - Coinbase Wallet, MetaMask, WalletConnect
+- **Environment detection** - Mobile and desktop compatibility
+- **Base network** - Built for the Base blockchain ecosystem
+
+## 🏃‍♂️ How to Use
+
+1. **Upload** - Click "Upload Image" or drag & drop a photo
+2. **Select** - Choose your crop shape (rectangle, square, circle, etc.)
+3. **Crop** - Drag the corners to adjust your selection
+4. **Share** - Click "Share to Farcaster" to post your cropped image
+
+## 💻 Development Setup
+
+### Prerequisites
+- Node.js 18+ 
+- npm, yarn, or pnpm
+
+### Installation
+
+1. **Clone the repository**
 ```bash
-npm install
-# or
-yarn install
-# or
-pnpm install
-# or
-bun install
+git clone https://github.com/yourusername/kroppit.git
+cd kroppit
 ```
 
-2. Verify environment variables, these will be set up by the `npx create-onchain --mini` command:
-
-You can regenerate the FARCASTER Account Association environment variables by running `npx create-onchain --manifest` in your project directory.
-
-The environment variables enable the following features:
-
-- Frame metadata - Sets up the Frame Embed that will be shown when you cast your frame
-- Account association - Allows users to add your frame to their account, enables notifications
-- Redis API keys - Enable Webhooks and background notifications for your application by storing users notification details
-
+2. **Install dependencies**
 ```bash
-# Shared/OnchainKit variables
-NEXT_PUBLIC_ONCHAINKIT_PROJECT_NAME=
-NEXT_PUBLIC_URL=
-NEXT_PUBLIC_ICON_URL=
-NEXT_PUBLIC_ONCHAINKIT_API_KEY=
+npm install
+```
 
-# Frame metadata
+3. **Set up environment variables**
+Create a `.env.local` file:
+```env
+# Required - OnchainKit API key
+NEXT_PUBLIC_ONCHAINKIT_API_KEY=your_api_key
+
+# Required - Your app details
+NEXT_PUBLIC_ONCHAINKIT_PROJECT_NAME=Kroppit
+NEXT_PUBLIC_URL=http://localhost:3000
+
+# Optional - For notifications (Upstash Redis)
+REDIS_URL=your_redis_url
+REDIS_TOKEN=your_redis_token
+
+# Optional - For frame association
 FARCASTER_HEADER=
 FARCASTER_PAYLOAD=
 FARCASTER_SIGNATURE=
-NEXT_PUBLIC_APP_ICON=
-NEXT_PUBLIC_APP_SUBTITLE=
-NEXT_PUBLIC_APP_DESCRIPTION=
-NEXT_PUBLIC_APP_SPLASH_IMAGE=
-NEXT_PUBLIC_SPLASH_BACKGROUND_COLOR=
-NEXT_PUBLIC_APP_PRIMARY_CATEGORY=
-NEXT_PUBLIC_APP_HERO_IMAGE=
-NEXT_PUBLIC_APP_TAGLINE=
-NEXT_PUBLIC_APP_OG_TITLE=
-NEXT_PUBLIC_APP_OG_DESCRIPTION=
-NEXT_PUBLIC_APP_OG_IMAGE=
-
-# Redis config
-REDIS_URL=
-REDIS_TOKEN=
 ```
 
-3. Start the development server:
+4. **Start development server**
 ```bash
 npm run dev
 ```
 
-## Template Features
+5. **Open in browser**
+Visit `http://localhost:3000`
 
-### Frame Configuration
-- `.well-known/farcaster.json` endpoint configured for Frame metadata and account association
-- Frame metadata automatically added to page headers in `layout.tsx`
+### Environment Setup Help
 
-### Background Notifications
-- Redis-backed notification system using Upstash
-- Ready-to-use notification endpoints in `api/notify` and `api/webhook`
-- Notification client utilities in `lib/notification-client.ts`
+**Get OnchainKit API Key:**
+1. Visit [Coinbase Developer Platform](https://portal.cdp.coinbase.com/)
+2. Create a project and get your API key
 
-### Theming
-- Custom theme defined in `theme.css` with OnchainKit variables
-- Pixel font integration with Pixelify Sans
-- Dark/light mode support through OnchainKit
+**Set up Redis (for notifications):**
+1. Visit [Upstash](https://upstash.com/)
+2. Create a free Redis database
+3. Copy URL and token to your `.env.local`
 
-### MiniKit Provider
-The app is wrapped with `MiniKitProvider` in `providers.tsx`, configured with:
-- OnchainKit integration
-- Access to Frames context
-- Sets up Wagmi Connectors
-- Sets up Frame SDK listeners
-- Applies Safe Area Insets
+**Generate Frame Association:**
+```bash
+npx create-onchain --manifest
+```
 
-## Customization
+## 📁 Project Structure
 
-To get started building your own frame, follow these steps:
+```
+app/
+├── components/
+│   ├── PhotoCropperCard.tsx    # Main cropping component
+│   └── DemoComponents.tsx      # UI components
+├── api/
+│   ├── upload-image/          # Image upload endpoint
+│   └── webhook/               # Farcaster webhooks
+├── page.tsx                   # Main app page
+├── layout.tsx                 # App layout & metadata
+├── providers.tsx              # Wallet & MiniKit providers
+└── globals.css               # Global styles
+```
 
-1. Remove the DemoComponents:
-   - Delete `components/DemoComponents.tsx`
-   - Remove demo-related imports from `page.tsx`
+## 🌟 What Makes Kroppit Special
 
-2. Start building your Frame:
-   - Modify `page.tsx` to create your Frame UI
-   - Update theme variables in `theme.css`
-   - Adjust MiniKit configuration in `providers.tsx`
+### For Beginners
+- **Simple interface** - Upload, crop, share in 3 steps
+- **Visual feedback** - See exactly what you're doing
+- **Mobile-first** - Works great on phones where most people use Farcaster
 
-3. Add your frame to your account:
-   - Cast your frame to see it in action
-   - Share your frame with others to start building your community
+### For Developers
+- **Modern stack** - Latest Next.js, React 19, TypeScript
+- **Clean code** - Well-structured, commented, and maintainable
+- **Mini App best practices** - Proper Farcaster integration patterns
+- **Responsive design** - Mobile and desktop compatibility
 
-## Learn More
+## 🚀 Deployment
 
-- [MiniKit Documentation](https://docs.base.org/builderkits/minikit/overview)
-- [OnchainKit Documentation](https://docs.base.org/builderkits/onchainkit/getting-started)
-- [Next.js Documentation](https://nextjs.org/docs)
-- [Tailwind CSS Documentation](https://tailwindcss.com/docs)
+### Deploy to Vercel (Recommended)
+
+1. **Connect to Vercel**
+```bash
+npm i -g vercel
+vercel
+```
+
+2. **Add environment variables**
+- Go to your Vercel dashboard
+- Add all environment variables from your `.env.local`
+- Redeploy
+
+3. **Update your environment**
+Update `NEXT_PUBLIC_URL` to your Vercel URL
+
+### Test in Farcaster
+1. Open Warpcast
+2. Use "Preview Frames" feature  
+3. Enter your deployed URL
+4. Test the full crop and share flow
+
+## 🎨 Customization
+
+Want to make Kroppit your own?
+
+### Branding
+- Change app name in `layout.tsx`
+- Update colors in `globals.css`
+- Replace logo images in `public/`
+
+### Features
+- Add new crop shapes in `PhotoCropperCard.tsx`
+- Customize sharing messages
+- Add image filters or effects
+
+## 📈 What's Next
+
+Kroppit is a great foundation for learning Mini App development. Consider adding:
+
+- **Preset crop ratios** - 1:1, 16:9, 4:3
+- **Basic filters** - Brightness, contrast, saturation  
+- **Batch processing** - Crop multiple images
+- **User accounts** - Save favorite crops
+- **NFT minting** - Turn crops into NFTs
+
+## 🤝 Contributing
+
+This is a learning project! Feel free to:
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Submit a pull request
+
+## 📄 License
+
+MIT License - feel free to use this project for learning and building your own apps.
+
+## 🙏 Acknowledgments
+
+- **Farcaster** - For the amazing Mini App platform
+- **Base** - For OnchainKit and MiniKit
+- **Coinbase** - For the developer tools
+- **The Farcaster community** - For inspiration and feedback
+
+---
+
+**Made with ❤️ for the Farcaster community**
+
+*This is a beginner-friendly Mini App project showcasing modern web development practices and Farcaster integration.*
