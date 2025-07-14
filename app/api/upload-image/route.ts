@@ -64,7 +64,7 @@ export async function POST(request: NextRequest) {
     if (pinataResult.IpfsHash) {
       // Create IPFS URL with .png extension for proper Warpcast rendering
       const ipfsUrl = `https://ipfs.io/ipfs/${pinataResult.IpfsHash}.png`;
-      console.log('✅ IPFS upload successful via Pinata:', ipfsUrl);
+      console.log('✅ IPFS upload successful via Pinata with .png extension:', ipfsUrl);
       return NextResponse.json({ 
         url: ipfsUrl,
         ipfsHash: pinataResult.IpfsHash,
