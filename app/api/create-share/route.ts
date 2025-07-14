@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { nanoid } from 'nanoid';
-import { storeImageData, cleanupOldEntries } from '../../../lib/imageStore';
+import { storeImageData, cleanupOldEntries, imageStore } from '../../../lib/imageStore';
 
 export async function POST(request: NextRequest) {
   try {
