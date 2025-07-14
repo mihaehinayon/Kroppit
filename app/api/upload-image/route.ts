@@ -90,7 +90,8 @@ async function uploadToPinata(buffer: Buffer, mimeType: string) {
     
     const cid = result.cid || result.IpfsHash;
     const gateway = process.env.PINATA_GATEWAY || "gateway.pinata.cloud";
-    const imageUrl = `https://${gateway}/ipfs/${cid}`;
+    // Always include filename parameter for Farcaster compatibility
+    const imageUrl = `https://${gateway}/ipfs/${cid}?filename=${filename}`;
     
     console.log(`✅ Pinata single file upload: ${imageUrl}`);
     return { success: true, url: imageUrl };
@@ -116,6 +117,8 @@ async function uploadToPinata(buffer: Buffer, mimeType: string) {
     const imageFile = new File([blob], uniqueFilename, { type: mimeType });
     
     console.log('📤 Uploading file to Pinata group...');
+    console.log(`📋 Group ID: ${PINATA_GROUP_ID}`);
+    console.log(`📄 File name: ${uniqueFilename}`);
     
     // Upload file to specific group for organization
     const result = await pinata.upload.file(imageFile).group(PINATA_GROUP_ID);
@@ -126,12 +129,13 @@ async function uploadToPinata(buffer: Buffer, mimeType: string) {
     const cid = result.cid || result.IpfsHash;
     const gateway = process.env.PINATA_GATEWAY || "gateway.pinata.cloud";
     
-    // Since we uploaded with a filename including extension, the URL should have the extension
+    // Always include filename parameter for Farcaster compatibility
     const imageUrl = `https://${gateway}/ipfs/${cid}?filename=${uniqueFilename}`;
     
-    console.log(`✅ Pinata upload successful: ${imageUrl}`);
+    console.log(`✅ Pinata group upload successful: ${imageUrl}`);
     console.log(`📊 File CID: ${cid}`);
     console.log(`🎯 Filename with extension: ${uniqueFilename}`);
+    console.log(`🔗 Final URL with extension: ${imageUrl}`);
     
     return { success: true, url: imageUrl };
     
