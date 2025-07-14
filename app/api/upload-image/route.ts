@@ -67,11 +67,11 @@ async function uploadToPinata(buffer: Buffer, mimeType: string) {
     throw new Error('Pinata JWT not configured');
   }
   
-  // Fixed folder CID - you'll need to set this in your environment
-  const PINATA_FOLDER_CID = process.env.PINATA_FOLDER_CID;
+  // Check for Pinata group ID for organized uploads
+  const PINATA_GROUP_ID = process.env.PINATA_GROUP_ID;
   
-  if (!PINATA_FOLDER_CID) {
-    console.log('📁 No PINATA_FOLDER_CID configured, uploading as single file...');
+  if (!PINATA_GROUP_ID) {
+    console.log('📁 No PINATA_GROUP_ID configured, uploading as single file...');
     
     // Fallback to single file upload
     const pinata = new PinataSDK({
@@ -102,7 +102,7 @@ async function uploadToPinata(buffer: Buffer, mimeType: string) {
   const uniqueFilename = `cropped_image_${timestamp}.${extension}`;
   
   try {
-    console.log(`📁 Using fixed folder CID: ${PINATA_FOLDER_CID}`);
+    console.log(`📁 Using Pinata group ID: ${PINATA_GROUP_ID}`);
     console.log(`📄 Unique filename: ${uniqueFilename}`);
     
     // Initialize Pinata SDK
@@ -115,10 +115,10 @@ async function uploadToPinata(buffer: Buffer, mimeType: string) {
     const blob = new Blob([buffer], { type: mimeType });
     const imageFile = new File([blob], uniqueFilename, { type: mimeType });
     
-    console.log('📤 Uploading file to Pinata folder...');
+    console.log('📤 Uploading file to Pinata group...');
     
-    // Upload file with name that follows the folder structure
-    const result = await pinata.upload.file(imageFile);
+    // Upload file to specific group for organization
+    const result = await pinata.upload.file(imageFile).group(PINATA_GROUP_ID);
     
     console.log('📊 Pinata upload result:', result);
     
@@ -136,7 +136,7 @@ async function uploadToPinata(buffer: Buffer, mimeType: string) {
     return { success: true, url: imageUrl };
     
   } catch (error) {
-    console.error('❌ Pinata folder upload failed:', error);
+    console.error('❌ Pinata group upload failed:', error);
     throw error;
   }
 }

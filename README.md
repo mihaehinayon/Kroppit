@@ -118,7 +118,8 @@ Visit `http://localhost:3000`
 1. Visit [Pinata](https://pinata.cloud/)
 2. Create a free account
 3. Generate a new JWT token with upload permissions
-4. Copy JWT to your `.env.local`
+4. Create a new group for organizing uploaded images
+5. Copy JWT and group ID to your `.env.local`
 
 **Generate Frame Association:**
 ```bash
