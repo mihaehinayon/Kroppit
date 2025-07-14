@@ -984,16 +984,26 @@ export function PhotoCropperCard({
             console.log('  - shareUrl (page):', shareUrl);
             
             try {
-              const text = encodeURIComponent("Just cropped the perfect photo with Kroppit! 📸✨\n\nTry it yourself - the easiest photo crop tool for Farcaster:");
-              // Use direct image URL, not the share page URL
-              const directImageUrl = imageUrl; // Make sure we use the direct image URL
-              const embeds = encodeURIComponent(directImageUrl);
+              // Try including the image URL in the text instead of as a separate embed parameter
+              const textWithImage = `Just cropped the perfect photo with Kroppit! 📸✨
+
+${imageUrl}
+
+Try it yourself - the easiest photo crop tool for Farcaster:`;
               
-              // Try without array brackets - some APIs expect embeds= not embeds[]=
-              const warpcastUrl = `https://warpcast.com/~/compose?text=${text}&embeds=${embeds}`;
+              const encodedText = encodeURIComponent(textWithImage);
               
-              console.log('🎯 CAST DEBUG: Using direct image URL for embed:', directImageUrl);
-              console.log('🎯 CAST DEBUG: Encoded embeds parameter:', embeds);
+              // Try both approaches: 1) URL in text, 2) separate embeds parameter
+              const warpcastUrlWithTextImage = `https://warpcast.com/~/compose?text=${encodedText}`;
+              const embeds = encodeURIComponent(imageUrl);
+              const warpcastUrlWithEmbeds = `https://warpcast.com/~/compose?text=${encodeURIComponent("Just cropped the perfect photo with Kroppit! 📸✨\n\nTry it yourself - the easiest photo crop tool for Farcaster:")}&embeds=${embeds}`;
+              
+              // Use the text-based approach first (more likely to work)
+              const warpcastUrl = warpcastUrlWithTextImage;
+              
+              console.log('🎯 CAST DEBUG: Using direct image URL:', imageUrl);
+              console.log('🎯 CAST DEBUG: Approach 1 - URL in text:', warpcastUrlWithTextImage);
+              console.log('🎯 CAST DEBUG: Approach 2 - embeds parameter:', warpcastUrlWithEmbeds);
               
               console.log('🎯 CAST DEBUG: Opening Warpcast compose URL:', warpcastUrl);
               
