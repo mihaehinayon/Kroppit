@@ -932,7 +932,11 @@ export function PhotoCropperCard({
           
           const castData = {
             text: "Just cropped the perfect photo with Kroppit! 📸✨\n\nTry it yourself - the easiest photo crop tool for Farcaster:",
-            embeds: [imageUrl] // IPFS URL with .png extension for proper rendering
+            embeds: [
+              {
+                url: imageUrl
+              }
+            ]
           };
           
           console.log('🎯 CAST DEBUG: Cast data:', castData);
