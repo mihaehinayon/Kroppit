@@ -954,7 +954,37 @@ export function PhotoCropperCard({
             
           } catch (composeCastError) {
             console.error('🎯 CAST DEBUG: composeCast error:', composeCastError);
-            throw composeCastError; // Re-throw to be caught by outer try-catch
+            
+            // Fallback to Warpcast compose URL when composeCast fails/times out
+            console.log('🎯 CAST DEBUG: Falling back to Warpcast compose URL...');
+            
+            try {
+              const text = encodeURIComponent("Just cropped the perfect photo with Kroppit! 📸✨\n\nTry it yourself - the easiest photo crop tool for Farcaster:");
+              const embeds = encodeURIComponent(imageUrl);
+              const warpcastUrl = `https://warpcast.com/~/compose?text=${text}&embeds[]=${embeds}`;
+              
+              console.log('🎯 CAST DEBUG: Opening Warpcast compose URL:', warpcastUrl);
+              
+              // Use openUrl to open Warpcast compose URL
+              await openUrl(warpcastUrl);
+              
+              console.log('🎯 CAST DEBUG: Warpcast compose URL opened successfully!');
+              sendNotification({
+                title: 'Compose Opened! 📝',
+                body: 'Warpcast compose opened with your cropped image!'
+              });
+              
+              // Reset the UI to allow for new cropping
+              setShowPreview(false);
+              setCroppedImageData(null);
+              setShowCroppedResult(false);
+              
+              return; // Success with fallback - exit early
+              
+            } catch (warpcastError) {
+              console.error('🎯 CAST DEBUG: Warpcast fallback failed:', warpcastError);
+              throw composeCastError; // Re-throw original error
+            }
           }
         } catch (castError) {
           console.error('🎯 CAST DEBUG: composeCast failed:', castError);
