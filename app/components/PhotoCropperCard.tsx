@@ -979,11 +979,21 @@ export function PhotoCropperCard({
             
             // Fallback to Warpcast compose URL when composeCast fails/times out
             console.log('🎯 CAST DEBUG: Falling back to Warpcast compose URL...');
+            console.log('🎯 CAST DEBUG: Available URLs:');
+            console.log('  - imageUrl (direct):', imageUrl);
+            console.log('  - shareUrl (page):', shareUrl);
             
             try {
               const text = encodeURIComponent("Just cropped the perfect photo with Kroppit! 📸✨\n\nTry it yourself - the easiest photo crop tool for Farcaster:");
-              const embeds = encodeURIComponent(imageUrl);
-              const warpcastUrl = `https://warpcast.com/~/compose?text=${text}&embeds[]=${embeds}`;
+              // Use direct image URL, not the share page URL
+              const directImageUrl = imageUrl; // Make sure we use the direct image URL
+              const embeds = encodeURIComponent(directImageUrl);
+              
+              // Try without array brackets - some APIs expect embeds= not embeds[]=
+              const warpcastUrl = `https://warpcast.com/~/compose?text=${text}&embeds=${embeds}`;
+              
+              console.log('🎯 CAST DEBUG: Using direct image URL for embed:', directImageUrl);
+              console.log('🎯 CAST DEBUG: Encoded embeds parameter:', embeds);
               
               console.log('🎯 CAST DEBUG: Opening Warpcast compose URL:', warpcastUrl);
               
