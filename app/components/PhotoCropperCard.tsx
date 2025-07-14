@@ -566,6 +566,28 @@ export function PhotoCropperCard({
     const imageData = canvas.toDataURL('image/png');
     console.log('✅ Image data created, length:', imageData.length);
     
+    // Check if the cropped image is too large for Farcaster
+    const imageSizeBytes = Math.round((imageData.length * 3) / 4); // Approximate size from base64
+    const imageSizeMB = (imageSizeBytes / (1024 * 1024)).toFixed(2);
+    const maxSizeBytes = 10 * 1024 * 1024; // 10 MB Farcaster limit
+    
+    console.log(`📏 Cropped image size: ${imageSizeMB} MB`);
+    
+    if (imageSizeBytes > maxSizeBytes) {
+      console.log(`❌ Cropped image too large for Farcaster: ${imageSizeMB} MB > 10 MB`);
+      sendNotification({
+        title: 'Image Too Large',
+        body: `Cropped image is ${imageSizeMB} MB. Farcaster requires < 10 MB. Try a smaller crop area.`
+      });
+      return; // Don't proceed with crop
+    } else if (imageSizeBytes > maxSizeBytes * 0.8) { // Warning at 8+ MB
+      console.log(`⚠️ Cropped image is large: ${imageSizeMB} MB (close to 10 MB limit)`);
+      sendNotification({
+        title: 'Large Image Warning',
+        body: `Image is ${imageSizeMB} MB. Consider a smaller crop for faster sharing.`
+      });
+    }
+    
     // Also copy to display canvas
     const displayCanvas = document.getElementById('displayPreviewCanvas') as HTMLCanvasElement;
     if (displayCanvas) {

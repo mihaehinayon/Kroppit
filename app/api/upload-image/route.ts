@@ -5,6 +5,39 @@ import fs from 'fs';
 import path from 'path';
 import os from 'os';
 
+// Farcaster image validation based on official spec
+function validateImageForFarcaster(file: File): { valid: boolean; error?: string; details?: string } {
+  // Check file size (must be < 10 MB)
+  const maxSizeBytes = 10 * 1024 * 1024; // 10 MB
+  const fileSizeMB = (file.size / (1024 * 1024)).toFixed(2);
+  
+  if (file.size > maxSizeBytes) {
+    return {
+      valid: false,
+      error: `Image too large for Farcaster (${fileSizeMB} MB)`,
+      details: `Farcaster requires images < 10 MB. Consider compressing your image or using a smaller crop area.`
+    };
+  }
+  
+  // Check file type (must be jpg, png, or gif)
+  const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif'];
+  if (!allowedTypes.includes(file.type)) {
+    return {
+      valid: false,
+      error: `Unsupported image format: ${file.type}`,
+      details: `Farcaster only supports JPG, PNG, and GIF images. SVG is not allowed.`
+    };
+  }
+  
+  // Log validation success with details
+  console.log(`✅ Image validation passed:`);
+  console.log(`   📏 Size: ${fileSizeMB} MB (under 10 MB limit)`);
+  console.log(`   📷 Format: ${file.type} (supported)`);
+  console.log(`   📁 Filename: ${file.name}`);
+  
+  return { valid: true };
+}
+
 export async function POST(request: NextRequest) {
   try {
     console.log('📸 Server-side image upload to image hosting service...');
@@ -18,6 +51,16 @@ export async function POST(request: NextRequest) {
     }
     
     console.log('📸 Image file received:', imageFile.name, imageFile.size, 'bytes');
+    
+    // Validate image for Farcaster compatibility
+    const validation = validateImageForFarcaster(imageFile);
+    if (!validation.valid) {
+      console.log('❌ Image validation failed:', validation.error);
+      return NextResponse.json({ 
+        error: validation.error, 
+        details: validation.details 
+      }, { status: 400 });
+    }
     
     // Convert file to buffer for upload
     const bytes = await imageFile.arrayBuffer();
