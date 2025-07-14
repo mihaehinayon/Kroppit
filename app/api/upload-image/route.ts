@@ -17,90 +17,64 @@ export async function POST(request: NextRequest) {
     // Convert file to buffer for upload
     const bytes = await imageFile.arrayBuffer();
     const buffer = Buffer.from(bytes);
-    
-    // Try Telegraph first (most reliable)
-    console.log('📸 Attempting upload to Telegraph...');
-    
-    const uploadFormData = new FormData();
     const blob = new Blob([buffer], { type: imageFile.type });
-    uploadFormData.append('file', blob, imageFile.name || 'kropped-image.png');
     
-    const uploadResponse = await fetch('https://telegra.ph/upload', {
+    // Try Cloudinary first (enterprise-grade with guaranteed CORS)
+    console.log('📸 Attempting upload to Cloudinary (CORS-enabled)...');
+    
+    const cloudinaryFormData = new FormData();
+    cloudinaryFormData.append('file', blob);
+    cloudinaryFormData.append('upload_preset', 'ml_default'); // Public preset
+    
+    const cloudinaryResponse = await fetch(
+      'https://api.cloudinary.com/v1_1/demo/image/upload',
+      {
+        method: 'POST',
+        body: cloudinaryFormData,
+      }
+    );
+    
+    console.log('📸 Cloudinary response status:', cloudinaryResponse.status);
+    
+    if (cloudinaryResponse.ok) {
+      const cloudinaryResult = await cloudinaryResponse.json();
+      console.log('📸 Cloudinary result:', cloudinaryResult);
+      
+      if (cloudinaryResult.secure_url) {
+        console.log('✅ Cloudinary upload successful:', cloudinaryResult.secure_url);
+        return NextResponse.json({ url: cloudinaryResult.secure_url });
+      }
+    }
+    
+    // Fallback to Imgur (free, reliable, CORS-enabled)
+    console.log('📸 Cloudinary failed, trying Imgur (CORS-enabled)...');
+    
+    const imgurFormData = new FormData();
+    imgurFormData.append('image', blob);
+    imgurFormData.append('type', 'file');
+    
+    const imgurResponse = await fetch('https://api.imgur.com/3/image', {
       method: 'POST',
-      body: uploadFormData,
+      headers: {
+        'Authorization': 'Client-ID 546c25a59c58ad7' // Anonymous public client ID
+      },
+      body: imgurFormData,
     });
     
-    console.log('📸 Telegraph response status:', uploadResponse.status);
+    console.log('📸 Imgur response status:', imgurResponse.status);
     
-    if (!uploadResponse.ok) {
-      console.log('❌ Telegraph upload failed with status:', uploadResponse.status);
-      const errorText = await uploadResponse.text();
-      console.log('❌ Telegraph error response:', errorText);
+    if (imgurResponse.ok) {
+      const imgurResult = await imgurResponse.json();
+      console.log('📸 Imgur result:', imgurResult);
       
-      // Try Cloudinary (known good CORS)
-      console.log('📸 Trying Cloudinary with CORS support...');
-      
-      const cloudinaryFormData = new FormData();
-      cloudinaryFormData.append('file', blob);
-      cloudinaryFormData.append('upload_preset', 'ml_default'); // Public preset
-      
-      const cloudinaryResponse = await fetch(
-        'https://api.cloudinary.com/v1_1/demo/image/upload',
-        {
-          method: 'POST',
-          body: cloudinaryFormData,
-        }
-      );
-      
-      console.log('📸 Cloudinary response status:', cloudinaryResponse.status);
-      
-      if (cloudinaryResponse.ok) {
-        const cloudinaryResult = await cloudinaryResponse.json();
-        console.log('📸 Cloudinary result:', cloudinaryResult);
-        
-        if (cloudinaryResult.secure_url) {
-          return NextResponse.json({ url: cloudinaryResult.secure_url });
-        }
-      }
-      
-      // Final fallback: Try Catbox
-      console.log('📸 Trying Catbox final fallback...');
-      
-      const catboxFormData = new FormData();
-      catboxFormData.append('reqtype', 'fileupload');
-      catboxFormData.append('fileToUpload', blob, imageFile.name || 'kropped-image.png');
-      
-      const catboxResponse = await fetch('https://catbox.moe/user/api.php', {
-        method: 'POST',
-        body: catboxFormData,
-      });
-      
-      console.log('📸 Catbox response status:', catboxResponse.status);
-      
-      if (!catboxResponse.ok) {
-        throw new Error('All upload services failed');
-      }
-      
-      const catboxResult = await catboxResponse.text();
-      console.log('📸 Catbox result:', catboxResult);
-      
-      if (catboxResult.trim().startsWith('http')) {
-        return NextResponse.json({ url: catboxResult.trim() });
-      } else {
-        throw new Error('Invalid Catbox response');
+      if (imgurResult.data && imgurResult.data.link) {
+        console.log('✅ Imgur upload successful:', imgurResult.data.link);
+        return NextResponse.json({ url: imgurResult.data.link });
       }
     }
     
-    const result = await uploadResponse.json();
-    console.log('📸 Telegraph result:', result);
-    
-    if (result[0]?.src) {
-      const imageUrl = `https://telegra.ph${result[0].src}`;
-      console.log('✅ Telegraph upload successful:', imageUrl);
-      return NextResponse.json({ url: imageUrl });
-    } else {
-      throw new Error('Invalid Telegraph response format');
-    }
+    // If both CORS-enabled services fail, throw error
+    throw new Error('All CORS-enabled upload services failed');
     
   } catch (error) {
     console.error('❌ Upload failed:', error);
