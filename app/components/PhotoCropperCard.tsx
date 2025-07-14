@@ -885,16 +885,30 @@ export function PhotoCropperCard({
       console.log('🎯 CAST DEBUG: Image upload result:', imageUrl ? 'Success' : 'Failed');
       
       if (imageUrl) {
-        console.log('🎯 CAST DEBUG: Attempting direct cast with Farcaster Frame SDK...');
+        console.log('🎯 CAST DEBUG: Creating share URL with Frame metadata...');
         
-        // Try direct casting with Farcaster Frame SDK - stay within same window
+        // Create share URL with proper Frame metadata
         try {
-          console.log('🎯 CAST DEBUG: Attempting in-app cast with Frame SDK...');
+          console.log('🎯 CAST DEBUG: Generating share URL for image...');
           
-          // Test 1: Try with our hosted image URL
+          // Create share URL that contains proper og:image and fc:frame metadata
+          const shareResponse = await fetch('/api/create-share', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ imageUrl })
+          });
+          
+          if (!shareResponse.ok) {
+            throw new Error('Failed to create share URL');
+          }
+          
+          const { shareUrl } = await shareResponse.json();
+          console.log('🎯 CAST DEBUG: Share URL created:', shareUrl);
+          
+          // Use share URL in composeCast (proper Frame approach)
           const castData = {
-            text: "Just cropped the perfect photo with Kroppit! 📸✨\n\nTry it yourself - the easiest photo crop tool for Farcaster:",
-            embeds: [imageUrl]
+            text: "Just cropped the perfect photo with Kroppit! 📸✨\n\nCheck out the result:",
+            embeds: [shareUrl] // Share URL with metadata, not direct image
           };
           
           // Test 2: Also try with the original data URL as backup
