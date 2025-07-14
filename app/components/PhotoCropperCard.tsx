@@ -905,146 +905,40 @@ export function PhotoCropperCard({
           const { shareUrl } = await shareResponse.json();
           console.log('🎯 CAST DEBUG: Share URL created:', shareUrl);
           
-          // Use share URL in composeCast (proper Frame approach)
-          const castData = {
-            text: "Just cropped the perfect photo with Kroppit! 📸✨\n\nCheck out the result:",
-            embeds: [shareUrl] // Share URL with metadata, not direct image
-          };
+          // Use Warpcast compose URL approach instead of composeCast API
+          console.log('🎯 CAST DEBUG: Using Warpcast compose URL approach...');
           
-          // Test 2: Also try with the original data URL as backup
-          const dataUrlCastData = {
-            text: "Just cropped the perfect photo with Kroppit! 📸✨\n\nTry it yourself - the easiest photo crop tool for Farcaster:",
-            embeds: [croppedImageData] // Original base64 data URL
-          };
+          // Create the Warpcast compose URL with the image embedded
+          const warpcastComposeUrl = `https://warpcast.com/~/compose?embeds[]=${encodeURIComponent(imageUrl)}&text=${encodeURIComponent("Just cropped the perfect photo with Kroppit! 📸✨\n\nTry it yourself - the easiest photo crop tool for Farcaster:")}`;
           
-          console.log('🎯 CAST DEBUG: Will try hosted URL first, then data URL if needed');
+          console.log('🎯 CAST DEBUG: Warpcast compose URL:', warpcastComposeUrl);
           
-          console.log('🎯 CAST DEBUG: Cast data prepared:', castData);
-          console.log('🎯 CAST DEBUG: SDK available:', typeof sdk);
-          console.log('🎯 CAST DEBUG: SDK actions available:', typeof sdk?.actions);
-          console.log('🎯 CAST DEBUG: composeCast available:', typeof sdk?.actions?.composeCast);
-          console.log('🎯 CAST DEBUG: Available actions:', Object.keys(sdk?.actions || {}));
+          // Open the Warpcast compose URL using MiniKit openUrl
+          console.log('🎯 CAST DEBUG: Opening Warpcast compose URL...');
+          openUrl(warpcastComposeUrl);
           
-          // Use the correct composeCast API for Farcaster Mini Apps - match exact documentation format
-          const composeCastParams = {
-            text: castData.text,
-            embeds: castData.embeds,
-            // channelKey: "farcaster" // Optional - try without first
-          };
-          
-          // Also try the exact format from documentation
-          const docExampleParams = {
-            text: "Just cropped the perfect photo with Kroppit! 📸✨\n\nTry it yourself - the easiest photo crop tool for Farcaster:",
-            embeds: [imageUrl]
-          };
-          
-          console.log('🎯 CAST DEBUG: URL ends with .png:', imageUrl.endsWith('.png'));
-          console.log('🎯 CAST DEBUG: URL matches supported format:', /\.(png|jpg|gif)$/i.test(imageUrl));
-          
-          console.log('🎯 CAST DEBUG: ComposeCast params:', JSON.stringify(composeCastParams, null, 2));
-          console.log('🎯 CAST DEBUG: Image URL being passed:', castData.embeds[0]);
-          console.log('🎯 CAST DEBUG: URL is valid:', castData.embeds[0].startsWith('http'));
-          console.log('🎯 CAST DEBUG: URL type:', typeof castData.embeds[0]);
-          console.log('🎯 CAST DEBUG: Embeds array length:', castData.embeds.length);
-          
-          // Test the URL by trying to fetch it and check CORS headers
-          try {
-            const testResponse = await fetch(castData.embeds[0], { method: 'HEAD' });
-            console.log('🎯 CAST DEBUG: Image URL is accessible:', testResponse.ok);
-            console.log('🎯 CAST DEBUG: Image content-type:', testResponse.headers.get('content-type'));
-            console.log('🎯 CAST DEBUG: CORS headers:', {
-              'access-control-allow-origin': testResponse.headers.get('access-control-allow-origin'),
-              'access-control-allow-methods': testResponse.headers.get('access-control-allow-methods'),
-              'access-control-allow-headers': testResponse.headers.get('access-control-allow-headers'),
-            });
-          } catch (testError) {
-            console.log('🎯 CAST DEBUG: Image URL test failed:', testError);
-          }
-          
-          // Test with a known working image URL first to see if the issue is the URL or the API
-          const testParams = {
-            text: castData.text,
-            embeds: ["https://i.imgur.com/test.png"] // Test with a known image hosting service
-          };
-          
-          console.log('🎯 CAST DEBUG: Testing with known URL first...');
-          
-          // Try with hosted image URL first
-          console.log('🎯 CAST DEBUG: Trying with hosted image URL...');
-          
-          let result;
-          try {
-            // Add timeout to catch hanging calls
-            const composeCastPromise = sdk.actions.composeCast(composeCastParams);
-            const timeoutPromise = new Promise((_, reject) => 
-              setTimeout(() => reject(new Error('ComposeCast timeout')), 10000)
-            );
-            
-            result = await Promise.race([composeCastPromise, timeoutPromise]);
-            console.log('🎯 CAST DEBUG: Hosted URL result:', result);
-            console.log('🎯 CAST DEBUG: Result type:', typeof result);
-            console.log('🎯 CAST DEBUG: Result keys:', Object.keys(result || {}));
-          } catch (castError) {
-            console.error('🎯 CAST DEBUG: ComposeCast error:', castError);
-            result = { isSuccess: false, error: castError };
-          }
-          
-          // If the call succeeded but we need to test different embed formats
-          if (result.isSuccess) {
-            console.log('🎯 CAST DEBUG: ComposeCast succeeded but image may not have appeared');
-            console.log('🎯 CAST DEBUG: Let\'s try different embed formats...');
-            
-            // Try with just the URL as a string instead of array
-            const stringEmbedParams = {
-              text: castData.text + "\n\nImage: " + imageUrl,
-              // Try without embeds to see if text-only works
-            };
-            console.log('🎯 CAST DEBUG: Testing text-only version...');
-          } else {
-            console.log('🎯 CAST DEBUG: Hosted URL failed, trying data URL...');
-            const dataUrlParams = {
-              text: castData.text,
-              embeds: [croppedImageData]
-            };
-            console.log('🎯 CAST DEBUG: Data URL params:', JSON.stringify(dataUrlParams, null, 2));
-            
-            try {
-              result = await sdk.actions.composeCast(dataUrlParams);
-              console.log('🎯 CAST DEBUG: Data URL result:', result);
-            } catch (dataUrlError) {
-              console.error('🎯 CAST DEBUG: Data URL error:', dataUrlError);
-            }
-          }
-          
-          console.log('🎯 CAST DEBUG: Direct cast result:', result);
-          
-          if (result.isSuccess) {
-            console.log('🎯 CAST DEBUG: Compose cast opened successfully!');
-            sendNotification({
-              title: 'Cast Composer Opened! 🎉',
-              body: 'Your cropped image is ready to share. Complete your cast in the composer.'
-            });
-            
-            // Reset the UI to allow for new cropping
-            setShowPreview(false);
-            setCroppedImageData(null);
-            setShowCroppedResult(false);
-            
-            return; // Success - exit early
-          } else {
-            console.log('🎯 CAST DEBUG: Compose cast failed with error:', result.error);
-            throw new Error(result.error?.message || 'ComposeCast failed');
-          }
-        } catch (directCastError) {
-          console.error('🎯 CAST DEBUG: Frame SDK cast failed:', directCastError);
-          
-          // Show error to user - don't fall back to external window
+          // Show success notification
           sendNotification({
-            title: 'Cast Failed',
-            body: 'Unable to cast directly. Please try again or check your connection.'
+            title: 'Cast Composer Opened! 🎉',
+            body: 'Your cropped image is ready to share in Warpcast. Complete your cast!'
           });
           
-          throw directCastError; // Re-throw to be caught by outer try-catch
+          // Reset the UI to allow for new cropping
+          setShowPreview(false);
+          setCroppedImageData(null);
+          setShowCroppedResult(false);
+          
+          return; // Success - exit early
+        } catch (urlError) {
+          console.error('🎯 CAST DEBUG: Warpcast URL creation failed:', urlError);
+          
+          // Show error to user
+          sendNotification({
+            title: 'Cast Failed',
+            body: 'Unable to create Warpcast compose URL. Please try again.'
+          });
+          
+          throw urlError; // Re-throw to be caught by outer try-catch
         }
       } else {
         throw new Error('Failed to upload image - no URL returned');
