@@ -905,40 +905,60 @@ export function PhotoCropperCard({
           const { shareUrl } = await shareResponse.json();
           console.log('🎯 CAST DEBUG: Share URL created:', shareUrl);
           
-          // Use Warpcast compose URL approach instead of composeCast API
-          console.log('🎯 CAST DEBUG: Using Warpcast compose URL approach...');
+          // Use composeCast API (official recommended approach)
+          console.log('🎯 CAST DEBUG: Using composeCast API with IPFS image...');
           
-          // Create the Warpcast compose URL with the image embedded
-          const warpcastComposeUrl = `https://warpcast.com/~/compose?embeds[]=${encodeURIComponent(imageUrl)}&text=${encodeURIComponent("Just cropped the perfect photo with Kroppit! 📸✨\n\nTry it yourself - the easiest photo crop tool for Farcaster:")}`;
+          const castData = {
+            text: "Just cropped the perfect photo with Kroppit! 📸✨\n\nTry it yourself - the easiest photo crop tool for Farcaster:",
+            embeds: [imageUrl] // IPFS URL with .png extension for proper rendering
+          };
           
-          console.log('🎯 CAST DEBUG: Warpcast compose URL:', warpcastComposeUrl);
+          console.log('🎯 CAST DEBUG: Cast data:', castData);
+          console.log('🎯 CAST DEBUG: Image URL ends with .png:', imageUrl.endsWith('.png'));
+          console.log('🎯 CAST DEBUG: SDK available:', typeof sdk);
+          console.log('🎯 CAST DEBUG: composeCast available:', typeof sdk?.actions?.composeCast);
           
-          // Open the Warpcast compose URL using MiniKit openUrl
-          console.log('🎯 CAST DEBUG: Opening Warpcast compose URL...');
-          openUrl(warpcastComposeUrl);
-          
-          // Show success notification
-          sendNotification({
-            title: 'Cast Composer Opened! 🎉',
-            body: 'Your cropped image is ready to share in Warpcast. Complete your cast!'
-          });
-          
-          // Reset the UI to allow for new cropping
-          setShowPreview(false);
-          setCroppedImageData(null);
-          setShowCroppedResult(false);
-          
-          return; // Success - exit early
-        } catch (urlError) {
-          console.error('🎯 CAST DEBUG: Warpcast URL creation failed:', urlError);
+          try {
+            // Use the official composeCast API from Farcaster Mini App SDK
+            const result = await sdk.actions.composeCast(castData);
+            
+            console.log('🎯 CAST DEBUG: composeCast result:', result);
+            
+            if (result) {
+              console.log('🎯 CAST DEBUG: Cast created successfully!');
+              sendNotification({
+                title: 'Cast Created! 🎉',
+                body: 'Your cropped image has been shared to Farcaster!'
+              });
+            } else {
+              console.log('🎯 CAST DEBUG: User cancelled cast');
+              sendNotification({
+                title: 'Cast Cancelled',
+                body: 'Cast creation was cancelled by user.'
+              });
+            }
+            
+            // Reset the UI to allow for new cropping
+            setShowPreview(false);
+            setCroppedImageData(null);
+            setShowCroppedResult(false);
+            
+            return; // Success - exit early
+            
+          } catch (composeCastError) {
+            console.error('🎯 CAST DEBUG: composeCast error:', composeCastError);
+            throw composeCastError; // Re-throw to be caught by outer try-catch
+          }
+        } catch (castError) {
+          console.error('🎯 CAST DEBUG: composeCast failed:', castError);
           
           // Show error to user
           sendNotification({
             title: 'Cast Failed',
-            body: 'Unable to create Warpcast compose URL. Please try again.'
+            body: 'Unable to create cast. Please try again.'
           });
           
-          throw urlError; // Re-throw to be caught by outer try-catch
+          throw castError; // Re-throw to be caught by outer try-catch
         }
       } else {
         throw new Error('Failed to upload image - no URL returned');

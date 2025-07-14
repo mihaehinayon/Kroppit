@@ -20,6 +20,7 @@ import {
 } from "@coinbase/onchainkit/wallet";
 import { useEffect, useMemo, useState, useCallback } from "react";
 import { useAccount, useConnect, useDisconnect } from "wagmi";
+import { sdk } from "@farcaster/frame-sdk";
 import { Button } from "./components/DemoComponents";
 import { Icon } from "./components/DemoComponents";
 import { PhotoCropperCard } from "./components/PhotoCropperCard";
@@ -41,6 +42,18 @@ export default function App() {
     if (!isFrameReady) {
       setFrameReady();
     }
+    
+    // Call sdk.actions.ready() after app is fully loaded (official recommendation)
+    const initializeSdk = async () => {
+      try {
+        await sdk.actions.ready();
+        console.log('📱 SDK ready called successfully');
+      } catch (error) {
+        console.log('📱 SDK ready error (expected in non-frame environment):', error.message);
+      }
+    };
+    
+    initializeSdk();
   }, [setFrameReady, isFrameReady]);
 
   // Debug MiniKit initialization and detect fallback need
