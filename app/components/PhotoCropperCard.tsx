@@ -919,8 +919,15 @@ export function PhotoCropperCard({
           console.log('🎯 CAST DEBUG: composeCast available:', typeof sdk?.actions?.composeCast);
           
           try {
-            // Use the official composeCast API from Farcaster Mini App SDK
-            const result = await sdk.actions.composeCast(castData);
+            // Use the official composeCast API from Farcaster Mini App SDK with timeout
+            console.log('🎯 CAST DEBUG: Calling composeCast...');
+            
+            const composeCastPromise = sdk.actions.composeCast(castData);
+            const timeoutPromise = new Promise((_, reject) => 
+              setTimeout(() => reject(new Error('composeCast timeout after 15 seconds')), 15000)
+            );
+            
+            const result = await Promise.race([composeCastPromise, timeoutPromise]);
             
             console.log('🎯 CAST DEBUG: composeCast result:', result);
             
