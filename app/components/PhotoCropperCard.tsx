@@ -941,15 +941,12 @@ export function PhotoCropperCard({
           console.log('🎯 CAST DEBUG: composeCast available:', typeof sdk?.actions?.composeCast);
           
           try {
-            // Use the official composeCast API from Farcaster Mini App SDK with timeout
+            // Use the official composeCast API from Farcaster Mini App SDK
             console.log('🎯 CAST DEBUG: Calling composeCast...');
+            console.log('🎯 CAST DEBUG: Cast data being sent:', castData);
             
-            const composeCastPromise = sdk.actions.composeCast(castData);
-            const timeoutPromise = new Promise((_, reject) => 
-              setTimeout(() => reject(new Error('composeCast timeout after 15 seconds')), 15000)
-            );
-            
-            const result = await Promise.race([composeCastPromise, timeoutPromise]);
+            // Let the SDK handle timeouts naturally - don't add artificial timeout
+            const result = await sdk.actions.composeCast(castData);
             
             console.log('🎯 CAST DEBUG: composeCast result:', result);
             
@@ -977,56 +974,18 @@ export function PhotoCropperCard({
           } catch (composeCastError) {
             console.error('🎯 CAST DEBUG: composeCast error:', composeCastError);
             
-            // Fallback to Warpcast compose URL when composeCast fails/times out
-            console.log('🎯 CAST DEBUG: Falling back to Warpcast compose URL...');
-            console.log('🎯 CAST DEBUG: Available URLs:');
-            console.log('  - imageUrl (direct):', imageUrl);
-            console.log('  - shareUrl (page):', shareUrl);
+            // For mini apps, composeCast is the proper approach - no fallback needed
+            // The timeout suggests an infrastructure issue that should be resolved
+            console.log('🎯 CAST DEBUG: composeCast is the recommended approach for mini apps');
+            console.log('🎯 CAST DEBUG: Timeout suggests infrastructure issue, not implementation problem');
             
-            try {
-              // Try including the image URL in the text instead of as a separate embed parameter
-              const textWithImage = `Just cropped the perfect photo with Kroppit! 📸✨
-
-${imageUrl}
-
-Try it yourself - the easiest photo crop tool for Farcaster:`;
-              
-              const encodedText = encodeURIComponent(textWithImage);
-              
-              // Try both approaches: 1) URL in text, 2) separate embeds parameter
-              const warpcastUrlWithTextImage = `https://warpcast.com/~/compose?text=${encodedText}`;
-              const embeds = encodeURIComponent(imageUrl);
-              const warpcastUrlWithEmbeds = `https://warpcast.com/~/compose?text=${encodeURIComponent("Just cropped the perfect photo with Kroppit! 📸✨\n\nTry it yourself - the easiest photo crop tool for Farcaster:")}&embeds=${embeds}`;
-              
-              // Use the text-based approach first (more likely to work)
-              const warpcastUrl = warpcastUrlWithTextImage;
-              
-              console.log('🎯 CAST DEBUG: Using direct image URL:', imageUrl);
-              console.log('🎯 CAST DEBUG: Approach 1 - URL in text:', warpcastUrlWithTextImage);
-              console.log('🎯 CAST DEBUG: Approach 2 - embeds parameter:', warpcastUrlWithEmbeds);
-              
-              console.log('🎯 CAST DEBUG: Opening Warpcast compose URL:', warpcastUrl);
-              
-              // Use openUrl to open Warpcast compose URL
-              await openUrl(warpcastUrl);
-              
-              console.log('🎯 CAST DEBUG: Warpcast compose URL opened successfully!');
-              sendNotification({
-                title: 'Compose Opened! 📝',
-                body: 'Warpcast compose opened with your cropped image!'
-              });
-              
-              // Reset the UI to allow for new cropping
-              setShowPreview(false);
-              setCroppedImageData(null);
-              setShowCroppedResult(false);
-              
-              return; // Success with fallback - exit early
-              
-            } catch (warpcastError) {
-              console.error('🎯 CAST DEBUG: Warpcast fallback failed:', warpcastError);
-              throw composeCastError; // Re-throw original error
-            }
+            // Show helpful error to user
+            sendNotification({
+              title: 'Cast Timed Out',
+              body: 'The cast composer is having issues. Please try again in a moment.'
+            });
+            
+            throw composeCastError; // Re-throw to be caught by outer try-catch
           }
         } catch (castError) {
           console.error('🎯 CAST DEBUG: composeCast failed:', castError);
