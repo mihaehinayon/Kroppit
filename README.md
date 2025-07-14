@@ -85,6 +85,10 @@ NEXT_PUBLIC_URL=http://localhost:3000
 REDIS_URL=your_redis_url
 REDIS_TOKEN=your_redis_token
 
+# Optional - For IPFS image hosting (Pinata)
+PINATA_JWT=your_pinata_jwt
+PINATA_GATEWAY=gateway.pinata.cloud
+
 # Optional - For frame association
 FARCASTER_HEADER=
 FARCASTER_PAYLOAD=
@@ -109,6 +113,12 @@ Visit `http://localhost:3000`
 1. Visit [Upstash](https://upstash.com/)
 2. Create a free Redis database
 3. Copy URL and token to your `.env.local`
+
+**Set up Pinata (for IPFS image hosting):**
+1. Visit [Pinata](https://pinata.cloud/)
+2. Create a free account
+3. Generate a new JWT token with upload permissions
+4. Copy JWT to your `.env.local`
 
 **Generate Frame Association:**
 ```bash

@@ -1,4 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { PinataSDK } from 'pinata';
+import { v4 as uuidv4 } from 'uuid';
+import fs from 'fs';
+import path from 'path';
+import os from 'os';
 
 export async function POST(request: NextRequest) {
   try {
@@ -20,6 +25,7 @@ export async function POST(request: NextRequest) {
     
     // Try multiple image hosting services for reliability
     const uploadServices = [
+      { name: 'Pinata', upload: uploadToPinata },
       { name: 'Catbox', upload: uploadToCatbox },
       { name: 'Telegraph', upload: uploadToTelegraph },
       { name: 'ImgBB', upload: uploadToImgBB }
@@ -51,6 +57,73 @@ export async function POST(request: NextRequest) {
       { error: 'Image upload failed', details: error.message },
       { status: 500 }
     );
+  }
+}
+
+// Pinata - IPFS hosting with folder upload for file extension URLs
+async function uploadToPinata(buffer: Buffer, mimeType: string) {
+  // Check if Pinata is configured
+  if (!process.env.PINATA_JWT) {
+    throw new Error('Pinata JWT not configured');
+  }
+  
+  const pinata = new PinataSDK({
+    pinataJwt: process.env.PINATA_JWT!,
+    pinataGateway: process.env.PINATA_GATEWAY || "gateway.pinata.cloud",
+  });
+
+  const extension = mimeType.split('/')[1] || 'png';
+  const filename = `cropped_image.${extension}`;
+  const uniqueId = uuidv4();
+  
+  // Create temporary folder structure
+  const tempDir = path.join(os.tmpdir(), `kroppit-${uniqueId}`);
+  fs.mkdirSync(tempDir, { recursive: true });
+  
+  try {
+    // Save image to temporary folder with proper filename
+    const filePath = path.join(tempDir, filename);
+    fs.writeFileSync(filePath, buffer);
+    
+    console.log(`📁 Created temporary folder: ${tempDir}`);
+    console.log(`📄 Saved image as: ${filename}`);
+    
+    // Upload folder to Pinata using pinFromFS
+    const options = {
+      pinataMetadata: {
+        name: `Kroppit Image ${uniqueId}`,
+        keyvalues: {
+          app: 'kroppit',
+          type: 'cropped-image',
+          timestamp: Date.now().toString()
+        }
+      },
+      pinataOptions: {
+        cidVersion: 0
+      }
+    };
+    
+    console.log('📤 Uploading folder to Pinata...');
+    const result = await pinata.pinFromFS(tempDir, options);
+    const folderCID = result.IpfsHash;
+    
+    // Construct URL with file extension
+    const gateway = process.env.PINATA_GATEWAY || "gateway.pinata.cloud";
+    const imageUrl = `https://${gateway}/ipfs/${folderCID}/${filename}`;
+    
+    console.log(`✅ Pinata upload successful: ${imageUrl}`);
+    console.log(`📊 Folder CID: ${folderCID}`);
+    return { success: true, url: imageUrl };
+    
+  } catch (error) {
+    console.error('❌ Pinata upload failed:', error);
+    throw error;
+  } finally {
+    // Clean up temporary files
+    if (fs.existsSync(tempDir)) {
+      fs.rmSync(tempDir, { recursive: true, force: true });
+      console.log(`🗑️ Cleaned up temporary folder: ${tempDir}`);
+    }
   }
 }
 
