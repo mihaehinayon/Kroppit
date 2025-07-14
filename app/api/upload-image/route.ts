@@ -105,24 +105,38 @@ async function uploadToPinata(buffer: Buffer, mimeType: string) {
     console.log(`📁 Using fixed folder CID: ${PINATA_FOLDER_CID}`);
     console.log(`📄 Unique filename: ${uniqueFilename}`);
     
-    // Construct URL with file extension using fixed folder CID
+    // Initialize Pinata SDK
+    const pinata = new PinataSDK({
+      pinataJwt: process.env.PINATA_JWT!,
+      pinataGateway: process.env.PINATA_GATEWAY || "gateway.pinata.cloud",
+    });
+
+    // Create file object for upload
+    const blob = new Blob([buffer], { type: mimeType });
+    const imageFile = new File([blob], uniqueFilename, { type: mimeType });
+    
+    console.log('📤 Uploading file to Pinata folder...');
+    
+    // Upload file with name that follows the folder structure
+    const result = await pinata.upload.file(imageFile);
+    
+    console.log('📊 Pinata upload result:', result);
+    
+    // Get the uploaded file CID
+    const cid = result.cid || result.IpfsHash;
     const gateway = process.env.PINATA_GATEWAY || "gateway.pinata.cloud";
-    const imageUrl = `https://${gateway}/ipfs/${PINATA_FOLDER_CID}/${uniqueFilename}`;
     
-    // Note: We're constructing the URL directly since we know the folder structure
-    // The actual upload to the folder would need additional Pinata API calls
-    // For now, we'll use this approach and let you set up the folder manually
+    // Since we uploaded with a filename including extension, the URL should have the extension
+    const imageUrl = `https://${gateway}/ipfs/${cid}?filename=${uniqueFilename}`;
     
-    console.log(`✅ Pinata folder URL constructed: ${imageUrl}`);
-    console.log(`📊 Folder CID: ${PINATA_FOLDER_CID}`);
+    console.log(`✅ Pinata upload successful: ${imageUrl}`);
+    console.log(`📊 File CID: ${cid}`);
     console.log(`🎯 Filename with extension: ${uniqueFilename}`);
     
-    // TODO: Implement actual upload to folder using Pinata API
-    // For now, return the constructed URL
     return { success: true, url: imageUrl };
     
   } catch (error) {
-    console.error('❌ Pinata folder approach failed:', error);
+    console.error('❌ Pinata folder upload failed:', error);
     throw error;
   }
 }
