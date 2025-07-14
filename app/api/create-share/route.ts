@@ -17,20 +17,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid image URL' }, { status: 400 });
     }
     
-    // Generate unique share ID
-    const shareId = nanoid(10); // Short, URL-safe ID
-    
-    // Store image data using shared store
-    storeImageData(shareId, imageUrl);
-    
+    // Encode image URL in the share URL instead of storing in memory
+    const encodedImageUrl = encodeURIComponent(imageUrl);
     const baseUrl = process.env.NEXT_PUBLIC_URL || 'https://kroppit.vercel.app';
-    const shareUrl = `${baseUrl}/share/${shareId}`;
+    const shareUrl = `${baseUrl}/share?img=${encodedImageUrl}`;
     
     console.log('✅ Share URL created:', shareUrl);
     
     return NextResponse.json({ 
       shareUrl,
-      shareId,
       imageUrl
     });
     

@@ -1,21 +1,22 @@
+import { Suspense } from 'react';
 import { notFound } from 'next/navigation';
-import { getImageData as getStoredImageData } from '../../../lib/imageStore';
 
 interface SharePageProps {
-  params: {
-    id: string;
+  searchParams: {
+    img?: string;
   };
 }
 
-export async function generateMetadata({ params }: SharePageProps) {
-  const imageData = getStoredImageData(params.id);
+export async function generateMetadata({ searchParams }: SharePageProps) {
+  const imageUrl = searchParams.img;
   
-  if (!imageData) {
+  if (!imageUrl) {
     return {
       title: 'Image not found - Kroppit',
     };
   }
 
+  const decodedImageUrl = decodeURIComponent(imageUrl);
   const baseUrl = process.env.NEXT_PUBLIC_URL || 'https://kroppit.vercel.app';
   
   return {
@@ -26,13 +27,13 @@ export async function generateMetadata({ params }: SharePageProps) {
       description: 'Check out this perfectly cropped photo made with Kroppit!',
       images: [
         {
-          url: imageData.imageUrl,
+          url: decodedImageUrl,
           width: 1200,
           height: 630,
           alt: 'Cropped image from Kroppit',
         },
       ],
-      url: `${baseUrl}/share/${params.id}`,
+      url: `${baseUrl}/share?img=${imageUrl}`,
       siteName: 'Kroppit',
       type: 'website',
     },
@@ -40,12 +41,12 @@ export async function generateMetadata({ params }: SharePageProps) {
       card: 'summary_large_image',
       title: 'Cropped with Kroppit - Photo Crop Tool',
       description: 'Check out this perfectly cropped photo made with Kroppit!',
-      images: [imageData.imageUrl],
+      images: [decodedImageUrl],
     },
     other: {
       // Farcaster Frame metadata
       'fc:frame': 'vNext',
-      'fc:frame:image': imageData.imageUrl,
+      'fc:frame:image': decodedImageUrl,
       'fc:frame:button:1': 'Try Kroppit',
       'fc:frame:button:1:action': 'link',
       'fc:frame:button:1:target': baseUrl,
@@ -53,12 +54,14 @@ export async function generateMetadata({ params }: SharePageProps) {
   };
 }
 
-export default function SharePage({ params }: SharePageProps) {
-  const imageData = getStoredImageData(params.id);
+function SharePageContent({ searchParams }: SharePageProps) {
+  const imageUrl = searchParams.img;
   
-  if (!imageData) {
+  if (!imageUrl) {
     notFound();
   }
+
+  const decodedImageUrl = decodeURIComponent(imageUrl);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
@@ -69,7 +72,7 @@ export default function SharePage({ params }: SharePageProps) {
         
         <div className="mb-6">
           <img 
-            src={imageData.imageUrl} 
+            src={decodedImageUrl} 
             alt="Cropped image"
             className="max-w-full h-auto rounded-lg shadow-md mx-auto"
             style={{ maxHeight: '400px' }}
@@ -94,5 +97,13 @@ export default function SharePage({ params }: SharePageProps) {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function SharePage(props: SharePageProps) {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <SharePageContent {...props} />
+    </Suspense>
   );
 }
