@@ -1,17 +1,15 @@
 {
-  "frame": {
-    "name": "Kroppit",
-    "version": "1",
-    "iconUrl": "https://kroppit.vercel.app/icon.png",
-    "homeUrl": "https://kroppit.vercel.app",
-    "imageUrl": "https://kroppit.vercel.app/icon.png",
-    "splashImageUrl": "https://kroppit.vercel.app/splash.png",
-    "splashBackgroundColor": "#ffffff",
-    "webhookUrl": "https://kroppit.vercel.app/api/webhook",
-    "subtitle": "Perfect crops for Farcaster",
-    "description": "Quick, easy, beautiful photo cropping tool designed specifically for Farcaster.",
-    "primaryCategory": "productivity"
-  },
+  "name": "Kroppit",
+  "version": "1",
+  "iconUrl": "https://kroppit.vercel.app/icon.png",
+  "homeUrl": "https://kroppit.vercel.app",
+  "imageUrl": "https://kroppit.vercel.app/icon.png",
+  "splashImageUrl": "https://kroppit.vercel.app/splash.png",
+  "splashBackgroundColor": "#ffffff",
+  "webhookUrl": "https://kroppit.vercel.app/api/webhook",
+  "subtitle": "Perfect crops for Farcaster",
+  "description": "Photo cropping tool designed specifically for Farcaster.",
+  "primaryCategory": "productivity",
   "accountAssociation": {
     "header": "eyJmaWQiOjExMDQ3OTMsInR5cGUiOiJjdXN0b2R5Iiwia2V5IjoiMHhhM0JGQmVGMjYzMjUwQjAzNDYyODVGMTMzZTZDQ2IwNjY4N0QzOTdDIn0",
     "payload": "eyJkb21haW4iOiJrcm9wcGl0LnZlcmNlbC5hcHAifQ",
