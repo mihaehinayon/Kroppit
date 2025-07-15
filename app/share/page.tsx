@@ -44,12 +44,17 @@ export async function generateMetadata({ searchParams }: SharePageProps) {
       images: [decodedImageUrl],
     },
     other: {
-      // Farcaster Frame metadata
-      'fc:frame': 'vNext',
-      'fc:frame:image': decodedImageUrl,
-      'fc:frame:button:1': 'Try Kroppit',
-      'fc:frame:button:1:action': 'link',
-      'fc:frame:button:1:target': baseUrl,
+      // Farcaster Mini App metadata
+      'fc:miniapp': JSON.stringify({
+        version: "1",
+        imageUrl: decodedImageUrl,
+        button: {
+          title: "Try Kroppit",
+          action: {
+            type: "launch_miniapp"
+          }
+        }
+      }),
     },
   };
 }
