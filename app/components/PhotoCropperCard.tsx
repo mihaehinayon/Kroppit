@@ -833,14 +833,67 @@ export function PhotoCropperCard({
   }, [croppedImageData, sendNotification, openUrl]);
 
   // Upload image to temporary hosting for casting
+  // Compress image for optimal Farcaster performance
+  const compressImageForFarcaster = useCallback(async (imageData: string): Promise<string> => {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d')!;
+        
+        // Calculate optimal dimensions (min 600x400, max 3000x2000, maintain aspect ratio)
+        let { width, height } = img;
+        const maxWidth = 1200; // Sweet spot for quality vs file size
+        const maxHeight = 800;
+        const minWidth = 600;
+        const minHeight = 400;
+        
+        // Scale down if too large
+        if (width > maxWidth || height > maxHeight) {
+          const ratio = Math.min(maxWidth / width, maxHeight / height);
+          width = Math.round(width * ratio);
+          height = Math.round(height * ratio);
+        }
+        
+        // Scale up if too small (but only slightly to avoid quality loss)
+        if (width < minWidth && height < minHeight) {
+          const ratio = Math.min(minWidth / width, minHeight / height);
+          if (ratio <= 1.5) { // Only scale up if not too aggressive
+            width = Math.round(width * ratio);
+            height = Math.round(height * ratio);
+          }
+        }
+        
+        canvas.width = width;
+        canvas.height = height;
+        
+        // Use high-quality image rendering
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = 'high';
+        ctx.drawImage(img, 0, 0, width, height);
+        
+        // Convert to optimized PNG (good balance of quality and compression)
+        const compressedData = canvas.toDataURL('image/png', 0.95);
+        console.log('🔵 COMPRESS DEBUG: Original size vs compressed:', imageData.length, 'vs', compressedData.length);
+        console.log('🔵 COMPRESS DEBUG: Final dimensions:', width, 'x', height);
+        
+        resolve(compressedData);
+      };
+      img.src = imageData;
+    });
+  }, []);
+
   const uploadImageToHost = useCallback(async (imageData: string): Promise<string | null> => {
     try {
       console.log('🔵 UPLOAD DEBUG: Starting upload process');
       
+      // Compress image for optimal Farcaster performance
+      const compressedImageData = await compressImageForFarcaster(imageData);
+      
       // Convert base64 to blob for upload
-      const response = await fetch(imageData);
+      const response = await fetch(compressedImageData);
       const blob = await response.blob();
-      console.log('🔵 UPLOAD DEBUG: Blob size:', blob.size);
+      console.log('🔵 UPLOAD DEBUG: Blob size after compression:', blob.size);
       
       // Use server-side proxy to avoid CORS issues
       console.log('🔵 UPLOAD DEBUG: Using server-side proxy...');
@@ -881,6 +934,33 @@ export function PhotoCropperCard({
     }
   }, [sendNotification]);
 
+  // Retry logic for composeCast timeouts
+  const castWithRetry = useCallback(async (castData: any, maxRetries = 2) => {
+    let retryCount = 0;
+    
+    while (retryCount <= maxRetries) {
+      try {
+        console.log(`🎯 CAST DEBUG: Attempt ${retryCount + 1}/${maxRetries + 1}`);
+        return await sdk.actions.composeCast(castData);
+      } catch (error) {
+        console.log(`🎯 CAST DEBUG: Attempt ${retryCount + 1} failed:`, error);
+        
+        if (retryCount < maxRetries && (
+          error.message?.toLowerCase().includes('timeout') ||
+          error.message?.toLowerCase().includes('network') ||
+          error.name === 'TimeoutError'
+        )) {
+          retryCount++;
+          const delay = Math.min(1000 * retryCount, 3000); // Progressive delay: 1s, 2s, 3s max
+          console.log(`🎯 CAST DEBUG: Retrying in ${delay}ms...`);
+          await new Promise(resolve => setTimeout(resolve, delay));
+        } else {
+          throw error;
+        }
+      }
+    }
+  }, []);
+
   // Share to Farcaster directly
   const shareToFarcaster = useCallback(async () => {
     if (!croppedImageData) {
@@ -920,12 +1000,11 @@ export function PhotoCropperCard({
         console.log('🎯 CAST DEBUG: composeCast available:', typeof sdk?.actions?.composeCast);
         
         try {
-          // Use the official composeCast API from Farcaster Mini App SDK
+          // Use the official composeCast API from Farcaster Mini App SDK with retry logic
           console.log('🎯 CAST DEBUG: Calling composeCast...');
           console.log('🎯 CAST DEBUG: Cast data being sent:', castData);
           
-          // Let the SDK handle timeouts naturally - don't add artificial timeout
-          const result = await sdk.actions.composeCast(castData);
+          const result = await castWithRetry(castData);
           
           console.log('🎯 CAST DEBUG: composeCast result:', result);
           
@@ -979,7 +1058,7 @@ export function PhotoCropperCard({
       setIsProcessing(false);
       console.log('🎯 CAST DEBUG: Cast process completed.');
     }
-  }, [croppedImageData, uploadImageToHost, openUrl, sendNotification]);
+  }, [croppedImageData, uploadImageToHost, openUrl, sendNotification, compressImageForFarcaster]);
 
   // Unified handler for both mouse and touch events
   const handleStartDrag = useCallback((e: React.MouseEvent | React.TouchEvent) => {
