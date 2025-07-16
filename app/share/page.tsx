@@ -18,7 +18,8 @@ export async function generateMetadata({ searchParams }: SharePageProps) {
 
   const decodedImageUrl = decodeURIComponent(imageUrl);
   const baseUrl = process.env.NEXT_PUBLIC_URL || 'https://kroppit.vercel.app';
-  const heroImage = process.env.NEXT_PUBLIC_APP_HERO_IMAGE;
+  const heroImage = process.env.NEXT_PUBLIC_APP_HERO_IMAGE || `${baseUrl}/hero.png`;
+  const miniAppImage = `${baseUrl}/image.png?v=${Date.now()}`; // Kroppit logo for Mini App embed
   
   return {
     title: 'Cropped with Kroppit - Photo Crop Tool',
@@ -48,11 +49,13 @@ export async function generateMetadata({ searchParams }: SharePageProps) {
       // Farcaster Mini App metadata
       'fc:miniapp': JSON.stringify({
         version: "1",
-        imageUrl: decodedImageUrl,
+        imageUrl: miniAppImage,
         button: {
           title: "Try Kroppit",
           action: {
             type: "launch_miniapp",
+            name: "Kroppit",
+            url: baseUrl,
             splashImageUrl: heroImage,
             splashBackgroundColor: "#ffffff"
           }
@@ -60,11 +63,13 @@ export async function generateMetadata({ searchParams }: SharePageProps) {
       }),
       'fc:frame': JSON.stringify({
         version: "1",
-        imageUrl: decodedImageUrl,
+        imageUrl: miniAppImage,
         button: {
           title: "Try Kroppit",
           action: {
-            type: "launch_miniapp"
+            type: "launch_miniapp",
+            name: "Kroppit",
+            url: baseUrl
           }
         }
       }),
