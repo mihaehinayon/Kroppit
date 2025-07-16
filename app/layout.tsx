@@ -17,7 +17,7 @@ export async function generateMetadata(): Promise<Metadata> {
               process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 
               "https://kroppit.vercel.app";
   const projectName = process.env.NEXT_PUBLIC_ONCHAINKIT_PROJECT_NAME || "Kroppit";
-  const embedImage = `${URL}/image.png`; // 3:2 ratio image for embeds
+  const embedImage = `${URL}/image.png?v=${Date.now()}`; // 3:2 ratio image for embeds with cache bust
   const heroImage = process.env.NEXT_PUBLIC_APP_HERO_IMAGE || `${URL}/hero.png`; // For splash screen
   
   // Debug logging
