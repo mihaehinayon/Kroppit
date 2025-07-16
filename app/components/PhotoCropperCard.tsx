@@ -989,9 +989,16 @@ export function PhotoCropperCard({
       if (imageUrl) {
         console.log('🎯 CAST DEBUG: Using composeCast API with direct image URL...');
         
+        // Generate branded image using ImageResponse API
+        const brandedImageUrl = `${window.location.origin}/api/generate-image?imageUrl=${encodeURIComponent(imageUrl)}`;
+        
         const castData = {
           text: "Just cropped the perfect photo with Kroppit! 📸✨\n\nTry it yourself - the easiest photo crop tool for Farcaster:",
-          embeds: [imageUrl]
+          embeds: [
+            "https://kroppit.vercel.app", // Mini app URL
+            brandedImageUrl // Generated image with branding
+          ],
+          channelKey: "miniapps"
         };
         
         console.log('🎯 CAST DEBUG: Cast data:', castData);
