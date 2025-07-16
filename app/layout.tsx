@@ -12,10 +12,22 @@ export const viewport: Viewport = {
 };
 
 export async function generateMetadata(): Promise<Metadata> {
-  const URL = process.env.NEXT_PUBLIC_URL;
+  // Use Vercel URL environment variable as fallback
+  const URL = process.env.NEXT_PUBLIC_URL || 
+              process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 
+              "https://kroppit.vercel.app";
   const projectName = process.env.NEXT_PUBLIC_ONCHAINKIT_PROJECT_NAME || "Kroppit";
   const embedImage = `${URL}/image.png`; // 3:2 ratio image for embeds
-  const heroImage = process.env.NEXT_PUBLIC_APP_HERO_IMAGE; // For splash screen
+  const heroImage = process.env.NEXT_PUBLIC_APP_HERO_IMAGE || `${URL}/hero.png`; // For splash screen
+  
+  // Debug logging
+  console.log("🔍 Metadata generation:", {
+    NEXT_PUBLIC_URL: process.env.NEXT_PUBLIC_URL,
+    VERCEL_URL: process.env.VERCEL_URL,
+    finalURL: URL,
+    embedImage,
+    heroImage
+  });
   
   return {
     title: projectName,
