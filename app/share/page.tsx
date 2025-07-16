@@ -19,7 +19,7 @@ export async function generateMetadata({ searchParams }: SharePageProps) {
   const decodedImageUrl = decodeURIComponent(imageUrl);
   const baseUrl = process.env.NEXT_PUBLIC_URL || 'https://kroppit.vercel.app';
   const heroImage = process.env.NEXT_PUBLIC_APP_HERO_IMAGE || `${baseUrl}/hero.png`;
-  const miniAppImage = `${baseUrl}/image.png?v=${Date.now()}`; // Kroppit logo for Mini App embed
+  const miniAppImage = `${baseUrl}/image.png?v=2025071601`; // Kroppit logo for Mini App embed
   
   return {
     title: 'Cropped with Kroppit - Photo Crop Tool',

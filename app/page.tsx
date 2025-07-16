@@ -46,6 +46,8 @@ export default function App() {
     // Call sdk.actions.ready() after app is fully loaded (official recommendation)
     const initializeSdk = async () => {
       try {
+        // Add a small delay to ensure DOM is fully loaded
+        await new Promise(resolve => setTimeout(resolve, 100));
         await sdk.actions.ready();
         console.log('📱 SDK ready called successfully');
       } catch (error) {
