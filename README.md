@@ -2,229 +2,141 @@
 
 A professional photo cropping Mini App built for Farcaster that lets users crop images and share them directly to their feed.
 
-## ✨ What Kroppit Does
+## ✨ Features
 
 **Kroppit** makes photo cropping simple and social:
 
-- 📱 **Upload photos** - Drag & drop or click to upload any image
-- ✂️ **Crop with precision** - Select exactly the area you want to keep
+- 📱 **Upload photos** - Drag & drop or click to upload any image (PNG, JPG, GIF up to 10MB)
+- ✂️ **Crop with precision** - Interactive crop selection with draggable handles
 - 🎯 **Multiple crop shapes** - Rectangle, square, landscape, portrait, or circle
-- 📤 **Share to Farcaster** - One-click sharing with automatic image hosting
+- 📤 **Share to Farcaster** - One-click sharing directly to Warpcast compose interface
 - 🔗 **Wallet integration** - Connect with Coinbase Wallet, MetaMask, or WalletConnect
-- 📱 **Mobile-friendly** - Works perfectly on all devices
+- 📱 **Mobile-friendly** - Optimized for mobile devices with touch support
+- 🎨 **Professional UI** - Modern design with dark/light theme support
 
 ## 🚀 Live Demo
 
-Try Kroppit in your Farcaster app or visit the web version to see it in action!
+**Try Kroppit:** https://kroppit.vercel.app
+
+Works in Farcaster apps and web browsers!
 
 ## 🛠️ Built With
 
-- **[Next.js 15](https://nextjs.org/)** - React framework
-- **[Farcaster MiniKit](https://docs.base.org/builderkits/minikit/overview)** - Mini App framework
-- **[OnchainKit](https://www.base.org/builders/onchainkit)** - Coinbase's React components
-- **[Wagmi](https://wagmi.sh/)** - Wallet connection
-- **[Tailwind CSS](https://tailwindcss.com/)** - Styling
-- **[TypeScript](https://www.typescriptlang.org/)** - Type safety
+- **Frontend**: Next.js 15.3.5, React 19.1.0, TypeScript
+- **Styling**: Tailwind CSS with custom theme system
+- **Image Processing**: HTML5 Canvas API for high-quality cropping
+- **Farcaster Integration**: @farcaster/frame-sdk and @coinbase/onchainkit
+- **Wallet Support**: Wagmi with multiple connector support
+- **Image Hosting**: Cloudinary for permanent storage
+- **Deployment**: Vercel with serverless functions
 
-## 🎯 Key Features
+## 🎯 How It Works
 
-### Photo Cropping Engine
-- **Canvas-based processing** - Precise image manipulation using HTML5 Canvas
-- **Interactive selection** - Click and drag to select crop areas
-- **Real-time preview** - See exactly what your crop will look like
-- **Multiple aspect ratios** - Choose from preset shapes or create custom crops
+1. **Upload** - Drag & drop or click to select your image
+2. **Crop** - Select your crop area with interactive handles
+3. **Choose Shape** - Pick from rectangle, square, landscape, portrait, or circle
+4. **Share** - One-click sharing opens Warpcast with your image ready to cast
 
-### Farcaster Integration
-- **Mini App native** - Built specifically for the Farcaster ecosystem
-- **Direct sharing** - Share cropped images straight to your Farcaster feed
-- **Auto image hosting** - Images are automatically uploaded and embedded
-- **Frame metadata** - Proper Mini App discovery and sharing
-
-### Wallet Support
-- **Multiple wallets** - Coinbase Wallet, MetaMask, WalletConnect
-- **Environment detection** - Mobile and desktop compatibility
-- **Base network** - Built for the Base blockchain ecosystem
-
-## 🏃‍♂️ How to Use
-
-1. **Upload** - Click "Upload Image" or drag & drop a photo
-2. **Select** - Choose your crop shape (rectangle, square, circle, etc.)
-3. **Crop** - Drag the corners to adjust your selection
-4. **Share** - Click "Share to Farcaster" to post your cropped image
-
-## 💻 Development Setup
+## 🔧 Installation & Setup
 
 ### Prerequisites
-- Node.js 18+ 
-- npm, yarn, or pnpm
+- Node.js 18+ and npm
+- Vercel account for deployment
+- Cloudinary account for image hosting
 
-### Installation
-
-1. **Clone the repository**
+### Local Development
 ```bash
-git clone https://github.com/yourusername/kroppit.git
+# Clone the repository
+git clone https://github.com/your-username/kroppit.git
 cd kroppit
-```
 
-2. **Install dependencies**
-```bash
+# Install dependencies
 npm install
-```
 
-3. **Set up environment variables**
-Create a `.env.local` file:
-```env
-# Required - OnchainKit API key
-NEXT_PUBLIC_ONCHAINKIT_API_KEY=your_api_key
+# Set up environment variables (see .env.example)
+cp .env.example .env.local
 
-# Required - Your app details
-NEXT_PUBLIC_ONCHAINKIT_PROJECT_NAME=Kroppit
-NEXT_PUBLIC_URL=http://localhost:3000
-
-# Optional - For notifications (Upstash Redis)
-REDIS_URL=your_redis_url
-REDIS_TOKEN=your_redis_token
-
-# Optional - For IPFS image hosting (Pinata)
-PINATA_JWT=your_pinata_jwt
-PINATA_GATEWAY=gateway.pinata.cloud
-
-# Optional - For frame association
-FARCASTER_HEADER=
-FARCASTER_PAYLOAD=
-FARCASTER_SIGNATURE=
-```
-
-4. **Start development server**
-```bash
+# Start development server
 npm run dev
 ```
 
-5. **Open in browser**
-Visit `http://localhost:3000`
+### Environment Variables
+Create a `.env.local` file with:
+```env
+NEXT_PUBLIC_ONCHAINKIT_PROJECT_NAME=Kroppit
+NEXT_PUBLIC_URL=https://your-app-url.vercel.app
+NEXT_PUBLIC_APP_HERO_IMAGE=https://your-app-url.vercel.app/hero.png
+CLOUDINARY_CLOUD_NAME=your-cloud-name
+CLOUDINARY_API_KEY=your-api-key
+CLOUDINARY_API_SECRET=your-api-secret
+```
 
-### Environment Setup Help
+## 🚀 Development
 
-**Get OnchainKit API Key:**
-1. Visit [Coinbase Developer Platform](https://portal.cdp.coinbase.com/)
-2. Create a project and get your API key
-
-**Set up Redis (for notifications):**
-1. Visit [Upstash](https://upstash.com/)
-2. Create a free Redis database
-3. Copy URL and token to your `.env.local`
-
-**Set up Pinata (for IPFS image hosting):**
-1. Visit [Pinata](https://pinata.cloud/)
-2. Create a free account
-3. Generate a new JWT token with upload permissions
-4. Create a new group for organizing uploaded images
-5. Copy JWT and group ID to your `.env.local`
-
-**Generate Frame Association:**
+### Build and Deploy
 ```bash
-npx create-onchain --manifest
+# Build for production
+npm run build
+
+# Deploy to Vercel
+vercel --prod
 ```
 
-## 📁 Project Structure
+### Testing
+- Test locally at `http://localhost:3000`
+- Use ngrok for Farcaster testing: `ngrok http 3000`
+- Test in Farcaster client with your Mini App URL
 
-```
-app/
-├── components/
-│   ├── PhotoCropperCard.tsx    # Main cropping component
-│   └── DemoComponents.tsx      # UI components
-├── api/
-│   ├── upload-image/          # Image upload endpoint
-│   └── webhook/               # Farcaster webhooks
-├── page.tsx                   # Main app page
-├── layout.tsx                 # App layout & metadata
-├── providers.tsx              # Wallet & MiniKit providers
-└── globals.css               # Global styles
-```
+## 📱 Farcaster Integration
 
-## 🌟 What Makes Kroppit Special
+Kroppit is built specifically for Farcaster with:
+- **Mini App compliance** - Follows Farcaster Mini App specifications
+- **Frame metadata** - Proper og:image and fc:frame tags for embedding
+- **Warpcast integration** - Direct sharing to Warpcast compose interface
+- **Mobile optimization** - Designed for mobile-first Farcaster experience
 
-### For Beginners
-- **Simple interface** - Upload, crop, share in 3 steps
-- **Visual feedback** - See exactly what you're doing
-- **Mobile-first** - Works great on phones where most people use Farcaster
+## 🔍 Technical Architecture
 
-### For Developers
-- **Modern stack** - Latest Next.js, React 19, TypeScript
-- **Clean code** - Well-structured, commented, and maintainable
-- **Mini App best practices** - Proper Farcaster integration patterns
-- **Responsive design** - Mobile and desktop compatibility
+### Core Components
+- **PhotoCropperCard** - Main cropping interface with canvas manipulation
+- **API Routes** - Image upload, processing, and sharing endpoints
+- **Farcaster Integration** - Mini App manifest and frame metadata
+- **Wallet Integration** - Multi-provider wallet connection support
 
-## 🚀 Deployment
+### Key Files
+- `/app/components/PhotoCropperCard.tsx` - Main cropping component
+- `/app/api/upload-image/route.ts` - Image upload and validation
+- `/app/share/page.tsx` - Shareable image pages with metadata
+- `/app/layout.tsx` - Root layout with Farcaster meta tags
 
-### Deploy to Vercel (Recommended)
+## 🐛 Known Issues
 
-1. **Connect to Vercel**
-```bash
-npm i -g vercel
-vercel
-```
+- Download button functionality is limited in Farcaster environments (by design)
+- Some mobile browsers may have touch event limitations
+- Large images (>5MB) may cause performance issues on older devices
 
-2. **Add environment variables**
-- Go to your Vercel dashboard
-- Add all environment variables from your `.env.local`
-- Redeploy
+## 📚 Additional Documentation
 
-3. **Update your environment**
-Update `NEXT_PUBLIC_URL` to your Vercel URL
-
-### Test in Farcaster
-1. Open Warpcast
-2. Use "Preview Frames" feature  
-3. Enter your deployed URL
-4. Test the full crop and share flow
-
-## 🎨 Customization
-
-Want to make Kroppit your own?
-
-### Branding
-- Change app name in `layout.tsx`
-- Update colors in `globals.css`
-- Replace logo images in `public/`
-
-### Features
-- Add new crop shapes in `PhotoCropperCard.tsx`
-- Customize sharing messages
-- Add image filters or effects
-
-## 📈 What's Next
-
-Kroppit is a great foundation for learning Mini App development. Consider adding:
-
-- **Preset crop ratios** - 1:1, 16:9, 4:3
-- **Basic filters** - Brightness, contrast, saturation  
-- **Batch processing** - Crop multiple images
-- **User accounts** - Save favorite crops
-- **NFT minting** - Turn crops into NFTs
+- [Deployment Guide](DEPLOYMENT.md) - Complete deployment instructions
+- [Error Analysis](ERROR_ANALYSIS_REPORT.md) - Development lessons learned
+- [Future Features](agents.md) - Planned enhancements and development log
 
 ## 🤝 Contributing
 
-This is a learning project! Feel free to:
-
 1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Submit a pull request
+2. Create a feature branch: `git checkout -b feature/amazing-feature`
+3. Commit your changes: `git commit -m 'Add amazing feature'`
+4. Push to the branch: `git push origin feature/amazing-feature`
+5. Open a Pull Request
 
 ## 📄 License
 
-MIT License - feel free to use this project for learning and building your own apps.
+This project is licensed under the MIT License - see the LICENSE file for details.
 
-## 🙏 Acknowledgments
+## 🎯 Built for Farcaster
 
-- **Farcaster** - For the amazing Mini App platform
-- **Base** - For OnchainKit and MiniKit
-- **Coinbase** - For the developer tools
-- **The Farcaster community** - For inspiration and feedback
+Kroppit is specifically designed for the Farcaster ecosystem, providing users with a professional photo cropping experience that integrates seamlessly with their social feed.
 
 ---
 
-**Made with ❤️ for the Farcaster community**
-
-*This is a beginner-friendly Mini App project showcasing modern web development practices and Farcaster integration.*
+Made with ❤️ for the Farcaster community
