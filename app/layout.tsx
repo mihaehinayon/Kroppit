@@ -41,6 +41,8 @@ export async function generateMetadata(): Promise<Metadata> {
           title: `Launch ${projectName}`,
           action: {
             type: "launch_miniapp",
+            name: projectName,
+            url: URL,
             splashImageUrl: heroImage,
             splashBackgroundColor: "#ffffff"
           }
@@ -52,7 +54,9 @@ export async function generateMetadata(): Promise<Metadata> {
         button: {
           title: `Launch ${projectName}`,
           action: {
-            type: "launch_miniapp"
+            type: "launch_miniapp",
+            name: projectName,
+            url: URL
           }
         }
       }),
