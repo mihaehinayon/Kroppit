@@ -1041,6 +1041,9 @@ export function PhotoCropperCard({
           
           throw composeCastError; // Re-throw to be caught by outer try-catch
         }
+      } else {
+        throw new Error('Failed to upload image - no URL returned');
+      }
     } catch (error) {
       console.error('🎯 CAST DEBUG: Share to Farcaster error:', error);
       sendNotification({
