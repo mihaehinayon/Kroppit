@@ -883,16 +883,46 @@ export function PhotoCropperCard({
     });
   }, []);
 
-  // Use compressed image data directly for Vercel hosting
-  const prepareImageForVercel = useCallback(async (imageData: string): Promise<string> => {
-    console.log('🔵 COMPRESS DEBUG: Preparing image for Vercel hosting');
-    
-    // Compress image for optimal Farcaster performance
-    const compressedImageData = await compressImageForFarcaster(imageData);
-    console.log('🔵 COMPRESS DEBUG: Image compressed and ready for Vercel');
-    
-    return compressedImageData;
-  }, [compressImageForFarcaster]);
+  // Create temporary upload for Vercel hosting
+  const uploadImageForVercel = useCallback(async (imageData: string): Promise<string | null> => {
+    try {
+      console.log('🔵 UPLOAD DEBUG: Creating temporary image for Vercel hosting');
+      
+      // Compress image for optimal Farcaster performance
+      const compressedImageData = await compressImageForFarcaster(imageData);
+      
+      // Convert base64 to blob for upload
+      const response = await fetch(compressedImageData);
+      const blob = await response.blob();
+      console.log('🔵 UPLOAD DEBUG: Blob size after compression:', blob.size);
+      
+      // Upload to temporary storage for Vercel to proxy
+      const formData = new FormData();
+      formData.append('image', blob, 'kropped-image.png');
+      
+      const uploadResponse = await fetch('/api/upload-image', {
+        method: 'POST',
+        body: formData,
+      });
+      
+      if (!uploadResponse.ok) {
+        throw new Error(`Upload failed: ${uploadResponse.status}`);
+      }
+      
+      const result = await uploadResponse.json();
+      console.log('🔵 UPLOAD DEBUG: Temporary upload success! URL:', result.url);
+      
+      return result.url;
+      
+    } catch (error) {
+      console.error('🔵 UPLOAD DEBUG: Upload failed:', error);
+      sendNotification({
+        title: 'Upload Failed',
+        body: 'Could not prepare image for casting.'
+      });
+      return null;
+    }
+  }, [sendNotification, compressImageForFarcaster]);
 
   // Retry logic for composeCast timeouts
   const castWithRetry = useCallback(async (castData: any, maxRetries = 2) => {
@@ -941,22 +971,25 @@ export function PhotoCropperCard({
     });
     
     try {
-      console.log('🎯 CAST DEBUG: Preparing image for Vercel hosting...');
-      // Prepare compressed image data for Vercel hosting
-      const compressedImageData = await prepareImageForVercel(croppedImageData);
-      console.log('🎯 CAST DEBUG: Image preparation complete');
+      console.log('🎯 CAST DEBUG: Uploading image to get public URL...');
+      // Upload image and get URL (back to working approach)
+      const imageUrl = await uploadImageForVercel(croppedImageData);
+      console.log('🎯 CAST DEBUG: Image upload result:', imageUrl ? 'Success' : 'Failed');
       
-      // Generate branded image using ImageResponse API with base64 data
-      const brandedImageUrl = `${window.location.origin}/api/generate-image?imageData=${encodeURIComponent(compressedImageData)}`;
-      
-      const castData = {
-        text: "Kroppit keeping it simple: crop and cast in one flow.",
-        embeds: [
-          brandedImageUrl, // Image first
-          "https://kroppit.vercel.app" // Mini app URL second
-        ],
-        channelKey: "miniapps"
-      };
+      if (imageUrl) {
+        console.log('🎯 CAST DEBUG: Using composeCast API with direct image URL...');
+        
+        // Generate branded image using ImageResponse API
+        const brandedImageUrl = `${window.location.origin}/api/generate-image?imageUrl=${encodeURIComponent(imageUrl)}`;
+        
+        const castData = {
+          text: "Kroppit keeping it simple: crop and cast in one flow.",
+          embeds: [
+            brandedImageUrl, // Image first
+            "https://kroppit.vercel.app" // Mini app URL second
+          ],
+          channelKey: "miniapps"
+        };
       
       console.log('🎯 CAST DEBUG: Cast data:', castData);
       console.log('🎯 CAST DEBUG: SDK available:', typeof sdk);
@@ -1018,7 +1051,7 @@ export function PhotoCropperCard({
       setIsProcessing(false);
       console.log('🎯 CAST DEBUG: Cast process completed.');
     }
-  }, [croppedImageData, prepareImageForVercel, openUrl, sendNotification]);
+  }, [croppedImageData, uploadImageForVercel, openUrl, sendNotification]);
 
   // Unified handler for both mouse and touch events
   const handleStartDrag = useCallback((e: React.MouseEvent | React.TouchEvent) => {
