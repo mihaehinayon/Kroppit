@@ -3,7 +3,7 @@
   "version": "1",
   "iconUrl": "https://kroppit.vercel.app/icon.png",
   "homeUrl": "https://kroppit.vercel.app",
-  "imageUrl": "https://kroppit.vercel.app/icon.png",
+  "imageUrl": "https://kroppit.vercel.app/image.png",
   "splashImageUrl": "https://kroppit.vercel.app/splash.png",
   "splashBackgroundColor": "#ffffff",
   "webhookUrl": "https://kroppit.vercel.app/api/webhook",
