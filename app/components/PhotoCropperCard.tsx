@@ -993,11 +993,8 @@ export function PhotoCropperCard({
         const brandedImageUrl = `${window.location.origin}/api/generate-image?imageUrl=${encodeURIComponent(imageUrl)}`;
         
         const castData = {
-          text: "Just cropped the perfect photo with Kroppit! 📸✨\n\nTry it yourself - the easiest photo crop tool for Farcaster:",
-          embeds: [
-            "https://kroppit.vercel.app", // Mini app URL
-            brandedImageUrl // Generated image with branding
-          ],
+          text: "Just cropped the perfect photo with Kroppit! 📸✨\n\nTry it yourself: https://kroppit.vercel.app",
+          embeds: [brandedImageUrl], // Just the image - link is in text
           channelKey: "miniapps"
         };
         
