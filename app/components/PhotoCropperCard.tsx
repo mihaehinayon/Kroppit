@@ -883,56 +883,16 @@ export function PhotoCropperCard({
     });
   }, []);
 
-  const uploadImageToHost = useCallback(async (imageData: string): Promise<string | null> => {
-    try {
-      console.log('🔵 UPLOAD DEBUG: Starting upload process');
-      
-      // Compress image for optimal Farcaster performance
-      const compressedImageData = await compressImageForFarcaster(imageData);
-      
-      // Convert base64 to blob for upload
-      const response = await fetch(compressedImageData);
-      const blob = await response.blob();
-      console.log('🔵 UPLOAD DEBUG: Blob size after compression:', blob.size);
-      
-      // Use server-side proxy to avoid CORS issues
-      console.log('🔵 UPLOAD DEBUG: Using server-side proxy...');
-      
-      const formData = new FormData();
-      formData.append('image', blob, 'kropped-image.png');
-      
-      const uploadResponse = await fetch('/api/upload-image', {
-        method: 'POST',
-        body: formData,
-      });
-      
-      console.log('🔵 UPLOAD DEBUG: Proxy response status:', uploadResponse.status);
-      
-      if (!uploadResponse.ok) {
-        const errorText = await uploadResponse.text();
-        console.log('🔵 UPLOAD DEBUG: Proxy error response:', errorText);
-        throw new Error(`Server upload failed: ${uploadResponse.status}`);
-      }
-      
-      const result = await uploadResponse.json();
-      console.log('🔵 UPLOAD DEBUG: Proxy result:', result);
-      
-      if (result.url) {
-        console.log('🔵 UPLOAD DEBUG: Server proxy success! URL:', result.url);
-        return result.url;
-      } else {
-        throw new Error('No URL returned from server');
-      }
-      
-    } catch (error) {
-      console.error('🔵 UPLOAD DEBUG: Upload failed:', error);
-      sendNotification({
-        title: 'Upload Failed',
-        body: 'Could not upload image for casting.'
-      });
-      return null;
-    }
-  }, [sendNotification]);
+  // Use compressed image data directly for Vercel hosting
+  const prepareImageForVercel = useCallback(async (imageData: string): Promise<string> => {
+    console.log('🔵 COMPRESS DEBUG: Preparing image for Vercel hosting');
+    
+    // Compress image for optimal Farcaster performance
+    const compressedImageData = await compressImageForFarcaster(imageData);
+    console.log('🔵 COMPRESS DEBUG: Image compressed and ready for Vercel');
+    
+    return compressedImageData;
+  }, [compressImageForFarcaster]);
 
   // Retry logic for composeCast timeouts
   const castWithRetry = useCallback(async (castData: any, maxRetries = 2) => {
@@ -981,27 +941,26 @@ export function PhotoCropperCard({
     });
     
     try {
-      console.log('🎯 CAST DEBUG: Uploading image to get public URL...');
-      // Upload image and get URL
-      const imageUrl = await uploadImageToHost(croppedImageData);
-      console.log('🎯 CAST DEBUG: Image upload result:', imageUrl ? 'Success' : 'Failed');
+      console.log('🎯 CAST DEBUG: Preparing image for Vercel hosting...');
+      // Prepare compressed image data for Vercel hosting
+      const compressedImageData = await prepareImageForVercel(croppedImageData);
+      console.log('🎯 CAST DEBUG: Image preparation complete');
       
-      if (imageUrl) {
-        console.log('🎯 CAST DEBUG: Using composeCast API with direct image URL...');
-        
-        // Generate branded image using ImageResponse API
-        const brandedImageUrl = `${window.location.origin}/api/generate-image?imageUrl=${encodeURIComponent(imageUrl)}`;
-        
-        const castData = {
-          text: "Just cropped the perfect photo with Kroppit! 📸✨\n\nTry it yourself: https://kroppit.vercel.app",
-          embeds: [brandedImageUrl], // Just the image - link is in text
-          channelKey: "miniapps"
-        };
-        
-        console.log('🎯 CAST DEBUG: Cast data:', castData);
-        console.log('🎯 CAST DEBUG: Image URL ends with .png:', imageUrl.endsWith('.png'));
-        console.log('🎯 CAST DEBUG: SDK available:', typeof sdk);
-        console.log('🎯 CAST DEBUG: composeCast available:', typeof sdk?.actions?.composeCast);
+      // Generate branded image using ImageResponse API with base64 data
+      const brandedImageUrl = `${window.location.origin}/api/generate-image?imageData=${encodeURIComponent(compressedImageData)}`;
+      
+      const castData = {
+        text: "Kroppit keeping it simple: crop and cast in one flow.",
+        embeds: [
+          brandedImageUrl, // Image first
+          "https://kroppit.vercel.app" // Mini app URL second
+        ],
+        channelKey: "miniapps"
+      };
+      
+      console.log('🎯 CAST DEBUG: Cast data:', castData);
+      console.log('🎯 CAST DEBUG: SDK available:', typeof sdk);
+      console.log('🎯 CAST DEBUG: composeCast available:', typeof sdk?.actions?.composeCast);
         
         try {
           // Use the official composeCast API from Farcaster Mini App SDK with retry logic
@@ -1049,9 +1008,6 @@ export function PhotoCropperCard({
           
           throw composeCastError; // Re-throw to be caught by outer try-catch
         }
-      } else {
-        throw new Error('Failed to upload image - no URL returned');
-      }
     } catch (error) {
       console.error('🎯 CAST DEBUG: Share to Farcaster error:', error);
       sendNotification({
@@ -1062,7 +1018,7 @@ export function PhotoCropperCard({
       setIsProcessing(false);
       console.log('🎯 CAST DEBUG: Cast process completed.');
     }
-  }, [croppedImageData, uploadImageToHost, openUrl, sendNotification, compressImageForFarcaster]);
+  }, [croppedImageData, prepareImageForVercel, openUrl, sendNotification]);
 
   // Unified handler for both mouse and touch events
   const handleStartDrag = useCallback((e: React.MouseEvent | React.TouchEvent) => {
