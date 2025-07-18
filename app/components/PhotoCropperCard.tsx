@@ -979,13 +979,13 @@ export function PhotoCropperCard({
       if (imageUrl) {
         console.log('🎯 CAST DEBUG: Using composeCast API with direct image URL...');
         
-        // Generate branded image using ImageResponse API
-        const brandedImageUrl = `${window.location.origin}/api/generate-image?imageUrl=${encodeURIComponent(imageUrl)}`;
+        // TEMP FIX: Try friend's working pattern - direct image URL in embeds
+        // OLD VERSION (for rollback): const brandedImageUrl = `${window.location.origin}/api/generate-image?imageUrl=${encodeURIComponent(imageUrl)}`;
         
         const castData = {
           text: "Kroppit keeping it simple: crop and cast in one flow.",
           embeds: [
-            brandedImageUrl, // Image first
+            imageUrl, // Direct image URL first
             "https://kroppit.vercel.app" // Mini app URL second
           ],
           channelKey: "miniapps"
