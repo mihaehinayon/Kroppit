@@ -272,9 +272,20 @@ export function Icon({ name, size = "md", className = "" }: IconProps) {
     ),
   };
 
+  const getSizeValue = (size: string) => {
+    const sizes = { sm: "16", md: "20", lg: "24" };
+    return sizes[size as keyof typeof sizes] || "20";
+  };
+
+  const sizeValue = getSizeValue(size);
+
   return (
     <span className={`inline-block ${sizeClasses[size]} ${className}`}>
-      {icons[name]}
+      <span 
+        style={{ width: sizeValue + 'px', height: sizeValue + 'px', display: 'inline-block' }}
+      >
+        {icons[name]}
+      </span>
     </span>
   );
 }
