@@ -3,6 +3,15 @@
 ## Overview
 This document captures all errors, issues, and learnings from the Kroppit photo cropping Mini App development project. Each entry includes the problem, root cause, solution, and prevention strategies.
 
+## Table of Contents
+1. [Server Startup & Process Conflicts](#error-1-server-startup--process-conflicts)
+2. [Farcaster API Compatibility Issue](#error-2-farcaster-api-compatibility-issue)
+3. [Farcaster Mini App Embed Images Not Loading](#error-3-farcaster-mini-app-embed-images-not-loading)
+4. [Local Testing with ngrok](#error-4-local-testing-with-ngrok)
+5. [Share on Farcaster Button Not Working](#error-5-share-on-farcaster-button-not-working)
+6. [Content Security Policy Blocking Image Upload](#error-6-content-security-policy-blocking-image-upload)
+7. [Key Farcaster Mini App Development Insights](#key-farcaster-mini-app-development-insights)
+
 ---
 
 ## Error #1: Server Startup & Process Conflicts
@@ -1732,5 +1741,202 @@ openUrl(warpcastComposeUrl);
 - All functionality works reliably in production environment
 
 🚀 **Production Ready**: App is now fully functional for deployment to Farcaster users
+
+---
+
+## Error #3: Farcaster Mini App Embed Images Not Loading
+
+### What Happened
+When sharing the Kroppit Mini App URL in Farcaster, no thumbnail image appeared in the embed preview. The embed was present but showed no image.
+
+### Root Cause
+The meta tags were using preview deployment URLs instead of production URLs:
+- `https://kroppit-qws2jp8nc-mihaehinayon-gmailcoms-projects.vercel.app/image.png` (preview - restricted access)
+- Instead of: `https://kroppit.vercel.app/image.png` (production - public access)
+
+### How It Was Fixed
+```typescript
+// Fixed URL generation in app/layout.tsx
+const isProduction = process.env.NODE_ENV === 'production' && !process.env.NGROK_URL;
+const baseImageUrl = process.env.NGROK_URL || "https://kroppit.vercel.app";
+const embedImage = `${baseImageUrl}/image.png?v=2025071601`; // Cache busting
+```
+
+### Key Lessons Learned
+1. **Production URLs**: Always use production domain for embed images, not preview deployment URLs
+2. **Farcaster Access**: Preview deployment URLs have restricted access that Farcaster can't reach (401 errors)
+3. **Cache Busting**: Add version parameters to prevent Farcaster from caching old images
+4. **Environment Detection**: Distinguish between production and development environments
+
+### Prevention Strategy
+- Hardcode production URLs for embed metadata in production builds
+- Add cache busting parameters to ensure fresh image loads
+- Test embed URLs directly to verify Farcaster can access them
+
+---
+
+## Error #4: Local Testing with ngrok
+
+### What Happened
+Need to test Farcaster Mini App changes locally, but localhost URLs aren't accessible to Farcaster clients for embed testing.
+
+### Root Cause
+- Farcaster needs public URLs to fetch embed metadata and images
+- Local development server only accessible via localhost
+- Need external tunnel for testing
+
+### How It Was Fixed
+1. **Installed ngrok**: `brew install ngrok/ngrok/ngrok`
+2. **Created tunnel script**:
+   ```bash
+   ngrok http 3001 --host-header=localhost:3001 --request-header-add='ngrok-skip-browser-warning:true'
+   ```
+3. **Updated metadata generation**:
+   ```typescript
+   const URL = process.env.NGROK_URL || process.env.NEXT_PUBLIC_URL || "https://kroppit.vercel.app";
+   ```
+4. **Environment variable setup**:
+   ```bash
+   export NGROK_URL=https://your-id.ngrok-free.app
+   npm run dev
+   ```
+
+### Key Lessons Learned
+1. **Public Access Required**: Farcaster embed testing requires publicly accessible URLs
+2. **Ngrok Warning Pages**: Free ngrok shows warning pages that need to be bypassed
+3. **Dynamic Environment**: Use environment variables to switch between local/production URLs
+4. **Port Conflicts**: Development server ports can change, ngrok needs to match
+
+### Prevention Strategy
+- Use ngrok for local Farcaster testing
+- Set up environment variable switching for different deployment contexts
+- Create automated scripts for ngrok setup and URL detection
+
+---
+
+## Error #5: Share on Farcaster Button Not Working
+
+### What Happened
+The "Share on Farcaster" button stopped working after some changes. Users reported the button wasn't opening the cast composer or creating casts.
+
+### Root Cause
+1. **SDK Version Mismatch**: Farcaster SDK version conflicts between dependencies
+2. **API Method Changes**: Incorrect assumption about `composeCast` API simplification
+3. **Missing Error Handling**: Poor error detection for non-Farcaster environments
+
+### How It Was Fixed
+1. **Updated SDK**: `npm install @farcaster/frame-sdk@^0.0.64`
+2. **Restored Working Implementation**:
+   ```javascript
+   const result = await sdk.actions.composeCast({
+     text: "Kroppit keeping it simple: crop and cast in one flow.",
+     embeds: [imageUrl, "https://kroppit.vercel.app"],
+     channelKey: "miniapps"
+   });
+   ```
+3. **Added Environment Detection**:
+   ```javascript
+   if (!sdk?.actions?.composeCast) {
+     throw new Error('Farcaster SDK not available - make sure you\'re in a Farcaster client');
+   }
+   ```
+
+### Key Lessons Learned
+1. **Working Solutions**: Don't change working implementations without testing
+2. **SDK Versions**: Keep track of which SDK versions work with your implementation
+3. **Environment Detection**: Always check if Farcaster SDK is available before calling methods
+4. **Embed Arrays**: `composeCast` still accepts full objects with embeds array for Mini Apps
+
+### Prevention Strategy
+- Document working SDK versions and API implementations
+- Test Share functionality in actual Farcaster environment before deploying
+- Add comprehensive error handling for different environments
+
+---
+
+## Error #6: Content Security Policy Blocking Image Upload
+
+### What Happened
+Share on Farcaster functionality failing with CSP violations:
+```
+🔵 UPLOAD DEBUG: Upload failed: TypeError: Failed to fetch. Refused to connect because it violates the document's Content Security Policy.
+```
+
+### Root Cause
+Content Security Policy (CSP) was blocking:
+1. **Base64 to Blob conversion**: `fetch(dataURL)` calls blocked
+2. **External API calls**: MetaMask, WalletConnect APIs blocked
+3. **Image upload**: Converting cropped image for Vercel hosting failed
+
+### How It Was Fixed
+Updated CSP in `next.config.mjs`:
+```javascript
+"connect-src 'self' data: blob: https://farcaster.xyz https://client.farcaster.xyz ..."
+```
+
+Key additions:
+- `data:` - Allows base64 data URL fetching
+- `blob:` - Allows blob URL creation and fetching
+
+### Key Lessons Learned
+1. **CSP Restrictions**: Strict CSP can break image processing workflows
+2. **Data URLs**: Base64 to blob conversion requires `data:` in connect-src
+3. **Image Upload Flow**: Vercel-hosted image upload needs proper CSP permissions
+4. **Testing Environment**: CSP violations may not appear in all testing environments
+
+### Prevention Strategy
+- Include `data:` and `blob:` in CSP connect-src for image processing apps
+- Test image upload functionality in production environment
+- Monitor browser console for CSP violations during development
+
+---
+
+## Key Farcaster Mini App Development Insights
+
+### 🎯 Share on Farcaster Implementation
+The correct approach for embedding both cropped images AND Mini App in casts:
+
+1. **Upload cropped image** to your own Vercel domain via `/api/upload-image`
+2. **Get public URL** from your server
+3. **Use `composeCast` with embeds array**:
+   ```javascript
+   await sdk.actions.composeCast({
+     text: "Your cast text",
+     embeds: [croppedImageURL, "https://your-miniapp.com"],
+     channelKey: "miniapps"
+   });
+   ```
+
+### 🖼️ Embed Metadata Requirements
+For proper Mini App embeds in Farcaster:
+```html
+<meta name="fc:miniapp" content='{"version":"1","imageUrl":"https://your-domain.com/image.png","button":{"title":"Launch App","action":{"type":"launch_miniapp","name":"Your App","url":"https://your-domain.com"}}}' />
+```
+
+### 🌐 URL Requirements
+- **Production URLs only**: No preview deployment URLs for embed images
+- **Public accessibility**: Farcaster must be able to fetch images (no 401 errors)
+- **Cache busting**: Add version parameters to prevent stale embeds
+- **Proper aspect ratios**: 3:2 ratio recommended for embed images
+
+### 🔧 Technical Architecture
+1. **Image Processing**: Client-side cropping with HTML5 Canvas
+2. **Image Hosting**: Upload to your own domain for embed compatibility
+3. **Mini App Detection**: Use MiniKit SDK context for environment detection
+4. **Fallback Handling**: Graceful degradation for non-Farcaster environments
+
+### 📱 Testing Strategy
+- **Local Development**: Use ngrok for Farcaster embed testing
+- **Production Testing**: Always test embeds in actual Farcaster clients
+- **CSP Considerations**: Ensure all external services are whitelisted
+- **Error Handling**: Comprehensive error messages for different failure modes
+
+---
+
+## Updated Summary
+
+Total errors encountered: 6
+Resolution rate: 100%
+Key learning: Farcaster Mini App development requires careful attention to URL accessibility, CSP configuration, SDK versions, and proper embed metadata. The most critical insight is that `composeCast` with embeds arrays still works for Mini Apps, enabling rich sharing experiences with both user content and app embeds.
 
 ---
