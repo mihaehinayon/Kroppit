@@ -996,11 +996,20 @@ export function PhotoCropperCard({
       console.log('🎯 CAST DEBUG: composeCast available:', typeof sdk?.actions?.composeCast);
         
         try {
-          // Use the official composeCast API from Farcaster Mini App SDK with retry logic
-          console.log('🎯 CAST DEBUG: Calling composeCast...');
+          // Check SDK availability first
+          if (!sdk?.actions?.composeCast) {
+            throw new Error('Farcaster SDK not available - make sure you\'re in a Farcaster client');
+          }
+          
+          // Use the working composeCast implementation with embeds
+          console.log('🎯 CAST DEBUG: Calling composeCast with embeds...');
           console.log('🎯 CAST DEBUG: Cast data being sent:', castData);
           
-          const result = await castWithRetry(castData);
+          const result = await sdk.actions.composeCast({
+            text: "Kroppit keeping it simple: crop and cast in one flow.",
+            embeds: [imageUrl, "https://kroppit.vercel.app"],
+            channelKey: "miniapps"
+          });
           
           console.log('🎯 CAST DEBUG: composeCast result:', result);
           
@@ -1028,16 +1037,23 @@ export function PhotoCropperCard({
         } catch (composeCastError) {
           console.error('🎯 CAST DEBUG: composeCast error:', composeCastError);
           
-          // For mini apps, composeCast is the proper approach - no fallback needed
-          // The timeout suggests an infrastructure issue that should be resolved
-          console.log('🎯 CAST DEBUG: composeCast is the recommended approach for mini apps');
-          console.log('🎯 CAST DEBUG: Timeout suggests infrastructure issue, not implementation problem');
-          
-          // Show helpful error to user
-          sendNotification({
-            title: 'Cast Timed Out',
-            body: 'The cast composer is having issues. Please try again in a moment.'
-          });
+          // Show specific error messages based on the error type
+          if (composeCastError.message?.includes('not available')) {
+            sendNotification({
+              title: 'Farcaster Required',
+              body: 'Please open this app in Farcaster to share casts.'
+            });
+          } else if (composeCastError.message?.toLowerCase().includes('timeout')) {
+            sendNotification({
+              title: 'Cast Timed Out',
+              body: 'The cast composer is having issues. Please try again in a moment.'
+            });
+          } else {
+            sendNotification({
+              title: 'Cast Failed',
+              body: `Could not open cast composer: ${composeCastError.message || 'Unknown error'}`
+            });
+          }
           
           throw composeCastError; // Re-throw to be caught by outer try-catch
         }
