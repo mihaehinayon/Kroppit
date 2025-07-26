@@ -12,17 +12,20 @@ export const viewport: Viewport = {
 };
 
 export async function generateMetadata(): Promise<Metadata> {
-  // Use NGROK_URL for local testing, fallback to production
-  const URL = process.env.NGROK_URL || process.env.NEXT_PUBLIC_URL || "https://kroppit.vercel.app";
+  // Force production URL for embeds unless explicitly testing with ngrok
+  const isProduction = process.env.NODE_ENV === 'production' && !process.env.NGROK_URL;
+  const URL = process.env.NGROK_URL || (isProduction ? "https://kroppit.vercel.app" : process.env.NEXT_PUBLIC_URL) || "https://kroppit.vercel.app";
   const projectName = process.env.NEXT_PUBLIC_ONCHAINKIT_PROJECT_NAME || "Kroppit";
   
-  // Use ngrok URL for local testing if available
+  // Always use production URL for embed images in production
   const baseImageUrl = process.env.NGROK_URL || "https://kroppit.vercel.app";
   const embedImage = `${baseImageUrl}/image.png?v=2025071601`;
   const heroImage = process.env.NEXT_PUBLIC_APP_HERO_IMAGE || `${baseImageUrl}/hero.png?v=2025071601`;
   
   // Debug logging
   console.log("🔍 Metadata generation:", {
+    NODE_ENV: process.env.NODE_ENV,
+    isProduction,
     NGROK_URL: process.env.NGROK_URL,
     NEXT_PUBLIC_URL: process.env.NEXT_PUBLIC_URL,
     VERCEL_URL: process.env.VERCEL_URL,
