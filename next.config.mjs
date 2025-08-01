@@ -23,15 +23,20 @@ const nextConfig = {
             value: 'true'
           },
           {
+            key: 'X-Frame-Options',
+            value: 'ALLOWALL'
+          },
+          {
             key: 'Content-Security-Policy',
             value: [
               "default-src 'self'",
-              "script-src 'self' 'unsafe-eval' 'unsafe-inline'",
+              "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://vercel.live",
               "style-src 'self' 'unsafe-inline'",
               "img-src 'self' data: blob: https:",
               "font-src 'self' data:",
-              "connect-src 'self' data: blob: https://farcaster.xyz https://client.farcaster.xyz https://warpcast.com https://client.warpcast.com https://wrpcd.net https://*.wrpcd.net https://privy.farcaster.xyz https://privy.warpcast.com https://auth.privy.io https://*.rpc.privy.systems https://cloudflareinsights.com https://explorer-api.walletconnect.com",
-              "frame-src 'self'",
+              "connect-src 'self' data: blob: https://farcaster.xyz https://client.farcaster.xyz https://warpcast.com https://client.warpcast.com https://wrpcd.net https://*.wrpcd.net https://privy.farcaster.xyz https://privy.warpcast.com https://auth.privy.io https://*.rpc.privy.systems https://cloudflareinsights.com https://explorer-api.walletconnect.com https://vercel.live https://*.walletconnect.com https://*.walletconnect.org https://registry.walletconnect.com",
+              "frame-src 'self' https://warpcast.com https://client.warpcast.com https://farcaster.xyz https://client.farcaster.xyz",
+              "frame-ancestors 'self' https://warpcast.com https://client.warpcast.com https://farcaster.xyz https://client.farcaster.xyz https://*.warpcast.com https://*.farcaster.xyz",
               "object-src 'none'",
               "base-uri 'self'"
             ].join('; ')
