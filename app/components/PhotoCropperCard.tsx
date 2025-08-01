@@ -1603,16 +1603,9 @@ export function PhotoCropperCard({
 
             {/* Download button - show by default, hide only in confirmed Farcaster environment */}
             {(() => {
-              // More reliable Farcaster detection using SDK availability
+              // Use the same Farcaster detection as the download function for consistency
               const isFarcaster = typeof window !== 'undefined' && (
-                // Check if Farcaster SDK is properly initialized (most reliable)
-                (typeof sdk !== 'undefined' && sdk?.context) ||
-                // Fallback: iframe with specific Farcaster indicators
-                (window.parent !== window && (
-                  document.referrer.includes('warpcast') ||
-                  navigator.userAgent.includes('Farcaster') ||
-                  window.location.search.includes('frame')
-                ))
+                window.parent !== window || window.location !== window.parent.location
               );
               
               return !isFarcaster && (
