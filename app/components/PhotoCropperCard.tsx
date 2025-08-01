@@ -706,72 +706,167 @@ export function PhotoCropperCard({
       }
     }
 
-    // Regular mobile browser
+    // Mobile browser - try native share API first, then fallbacks
     if (isMobile) {
       try {
-        // For mobile: Open image in new tab for long-press save
-        const newWindow = window.open('', '_blank');
-        if (newWindow) {
-          newWindow.document.write(`
-            <!DOCTYPE html>
-            <html>
-              <head>
-                <title>Kropped Image - Long press to save</title>
-                <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                <style>
-                  body { 
-                    margin: 0; 
-                    padding: 20px; 
-                    background: var(--app-background); 
-                    display: flex; 
-                    flex-direction: column;
-                    align-items: center; 
-                    justify-content: center; 
-                    min-height: 100vh;
-                    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        // First, try the native Web Share API (works on most modern mobile browsers)
+        if (navigator.share && 'canShare' in navigator) {
+          // Convert data URL to blob for sharing
+          const canvas = previewCanvasRef.current;
+          if (canvas) {
+            canvas.toBlob(async (blob) => {
+              if (blob) {
+                const file = new File([blob], `kropped-image-${Date.now()}.png`, {
+                  type: 'image/png',
+                });
+                
+                // Check if we can share files
+                if (navigator.canShare({ files: [file] })) {
+                  try {
+                    await navigator.share({
+                      files: [file],
+                      title: 'Kropped Image',
+                      text: 'Check out my cropped image from Kroppit!'
+                    });
+                    
+                    sendNotification({
+                      title: 'Image Shared!',
+                      body: 'Image shared successfully. You can save it to Photos from the share menu.'
+                    });
+                    return;
+                  } catch (shareError) {
+                    console.log('Native share cancelled or failed:', shareError);
+                    // Fall through to other methods
                   }
-                  img { 
-                    max-width: 100%; 
-                    max-height: 80vh; 
-                    height: auto; 
-                    border-radius: 8px;
-                    box-shadow: 0 4px 20px var(--app-overlay-light);
-                  }
-                  .instructions {
-                    color: var(--app-foreground);
-                    text-align: center;
-                    margin-top: 20px;
-                    font-size: 16px;
-                    opacity: 0.8;
-                  }
-                  .instructions strong {
-                    color: var(--app-success);
-                  }
-                </style>
-              </head>
-              <body>
-                <img src="${croppedImageData}" alt="Kropped Image" />
-                <div class="instructions">
-                  <strong>Mobile Users:</strong><br>
-                  Long press the image above and select "Save to Photos" or "Download Image"
-                </div>
-              </body>
-            </html>
-          `);
-          newWindow.document.close();
-          
-          sendNotification({
-            title: 'Image Ready!',
-            body: 'Long press the image to save to your device.'
-          });
+                }
+              }
+              
+              // Fallback if native share doesn't work - try direct download
+              mobileDownloadFallback();
+            }, 'image/png');
+          } else {
+            mobileDownloadFallback();
+          }
         } else {
-          throw new Error('Could not open new window');
+          // No native share API available
+          mobileDownloadFallback();
         }
       } catch (error) {
-        console.error('Mobile download method failed:', error);
-        alert('Please allow pop-ups to download images on mobile devices.');
+        console.error('Mobile download error:', error);
+        mobileDownloadFallback();
       }
       return;
+    }
+    
+    // Mobile download fallback function
+    function mobileDownloadFallback() {
+      try {
+        // Try direct download link first (works on some Android browsers)
+        const link = document.createElement('a');
+        link.href = croppedImageData;
+        link.download = `kropped-image-${Date.now()}.png`;
+        link.style.display = 'none';
+        
+        document.body.appendChild(link);
+        link.click();
+        
+        setTimeout(() => {
+          if (document.body.contains(link)) {
+            document.body.removeChild(link);
+          }
+        }, 1000);
+
+        sendNotification({
+          title: 'Download Started!',
+          body: 'Check your Downloads folder or notification bar.'
+        });
+        
+      } catch (downloadError) {
+        console.error('Direct download failed, trying image popup:', downloadError);
+        
+        // Final fallback: Open image in new tab with better instructions
+        try {
+          const newWindow = window.open('', '_blank');
+          if (newWindow) {
+            const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+            const isAndroid = /Android/.test(navigator.userAgent);
+            
+            let instructions = 'Long press the image and select "Save Image" or "Download Image"';
+            if (isIOS) {
+              instructions = 'Long press the image and select "Save to Photos"';
+            } else if (isAndroid) {
+              instructions = 'Long press the image and select "Download image" or "Save image"';
+            }
+            
+            newWindow.document.write(`
+              <!DOCTYPE html>
+              <html>
+                <head>
+                  <title>Save Your Kropped Image</title>
+                  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                  <style>
+                    body { 
+                      margin: 0; 
+                      padding: 20px; 
+                      background: #000; 
+                      display: flex; 
+                      flex-direction: column;
+                      align-items: center; 
+                      justify-content: center; 
+                      min-height: 100vh;
+                      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                    }
+                    img { 
+                      max-width: 90%; 
+                      max-height: 70vh; 
+                      height: auto; 
+                      border-radius: 12px;
+                      box-shadow: 0 8px 32px rgba(255,255,255,0.1);
+                      margin-bottom: 20px;
+                    }
+                    .instructions {
+                      color: #fff;
+                      text-align: center;
+                      font-size: 18px;
+                      line-height: 1.6;
+                      background: rgba(255,255,255,0.1);
+                      padding: 20px;
+                      border-radius: 12px;
+                      backdrop-filter: blur(10px);
+                    }
+                    .highlight {
+                      color: #00D2FF;
+                      font-weight: 600;
+                    }
+                    .step {
+                      margin: 10px 0;
+                      font-size: 16px;
+                    }
+                  </style>
+                </head>
+                <body>
+                  <img src="${croppedImageData}" alt="Your Kropped Image" />
+                  <div class="instructions">
+                    <div class="step">📱 <span class="highlight">To Save This Image:</span></div>
+                    <div class="step">${instructions}</div>
+                  </div>
+                </body>
+              </html>
+            `);
+            newWindow.document.close();
+            
+            sendNotification({
+              title: 'Image Ready!',
+              body: 'Follow the instructions to save to your device.'
+            });
+          } else {
+            throw new Error('Could not open new window');
+          }
+        } catch (popupError) {
+          console.error('All mobile methods failed:', popupError);
+          alert('Please enable pop-ups to download images, or try using the share button instead.');
+        }
+      }
     }
 
     // Desktop download method
