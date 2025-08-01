@@ -1484,25 +1484,44 @@ export function PhotoCropperCard({
           style={{ display: 'none' }}
         />
         
-        {/* Share button - show after cropping */}
+        {/* Action buttons after cropping */}
         {showPreview && (
-          <Button
-            onClick={shareToFarcaster}
-            variant="primary"
-            size="sm"
-            className="w-full"
-            icon={isProcessing ? undefined : <Icon name="star" size="sm" />}
-            disabled={isProcessing}
-          >
-            {isProcessing ? (
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                Publishing Cast...
-              </div>
-            ) : (
-              'Share on Farcaster'
-            )}
-          </Button>
+          <div className="space-y-2">
+            {/* Share button */}
+            <Button
+              onClick={shareToFarcaster}
+              variant="primary"
+              size="sm"
+              className="w-full"
+              icon={isProcessing ? undefined : <Icon name="star" size="sm" />}
+              disabled={isProcessing}
+            >
+              {isProcessing ? (
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  Publishing Cast...
+                </div>
+              ) : (
+                'Share on Farcaster'
+              )}
+            </Button>
+
+            {/* Download button - only show on mobile/desktop (not in Farcaster) */}
+            {(() => {
+              const isFarcaster = typeof window !== 'undefined' && (window.parent !== window || window.location !== window.parent.location);
+              return !isFarcaster && (
+                <Button
+                  onClick={downloadImage}
+                  variant="secondary"
+                  size="sm"
+                  className="w-full"
+                  icon={<Icon name="download" size="sm" />}
+                >
+                  Download Image
+                </Button>
+              );
+            })()}
+          </div>
         )}
 
 
