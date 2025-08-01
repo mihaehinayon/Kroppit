@@ -1506,9 +1506,20 @@ export function PhotoCropperCard({
               )}
             </Button>
 
-            {/* Download button - only show on mobile/desktop (not in Farcaster) */}
+            {/* Download button - show by default, hide only in confirmed Farcaster environment */}
             {(() => {
-              const isFarcaster = typeof window !== 'undefined' && (window.parent !== window || window.location !== window.parent.location);
+              // Conservative Farcaster detection - only hide if we're sure it's Farcaster
+              const isFarcaster = typeof window !== 'undefined' && (
+                // Check for Farcaster in URL or referrer
+                window.location.hostname.includes('warpcast') ||
+                window.location.hostname.includes('farcaster') ||
+                document.referrer.includes('warpcast') ||
+                document.referrer.includes('farcaster') ||
+                // Check for Farcaster user agent
+                navigator.userAgent.includes('Farcaster') ||
+                navigator.userAgent.includes('Warpcast')
+              );
+              
               return !isFarcaster && (
                 <Button
                   onClick={downloadImage}
