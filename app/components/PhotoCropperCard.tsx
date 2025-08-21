@@ -577,7 +577,7 @@ export function PhotoCropperCard({
       console.log(`❌ Cropped image too large for Farcaster: ${imageSizeMB} MB > 10 MB`);
       sendNotification({
         title: 'Image Too Large',
-        body: `Cropped image is ${imageSizeMB} MB. Farcaster requires < 10 MB. Try a smaller crop area.`
+        body: `Cropped image is ${imageSizeMB} MB. Platform requires < 10 MB. Try a smaller crop area.`
       });
       return; // Don't proceed with crop
     } else if (imageSizeBytes > maxSizeBytes * 0.8) { // Warning at 8+ MB
@@ -700,7 +700,7 @@ export function PhotoCropperCard({
           return;
         } catch (clipboardError) {
           console.error('Clipboard fallback failed:', clipboardError);
-          alert('Download not available in Farcaster environment. Try opening the app in your browser.');
+          alert('Download not available in this environment. Try opening the app in your browser.');
           return;
         }
       }
@@ -1062,7 +1062,7 @@ export function PhotoCropperCard({
     // Show initial loading notification
     sendNotification({
       title: 'Preparing Cast...',
-      body: 'Uploading your cropped image to Farcaster...'
+      body: 'Preparing your cropped image for sharing...'
     });
     
     try {
@@ -1112,7 +1112,7 @@ export function PhotoCropperCard({
             console.log('🎯 CAST DEBUG: Cast created successfully!');
             sendNotification({
               title: 'Cast Created! 🎉',
-              body: 'Your cropped image has been shared to Farcaster!'
+              body: 'Your cropped image has been shared successfully!'
             });
           } else {
             console.log('🎯 CAST DEBUG: User cancelled cast');
@@ -1159,7 +1159,7 @@ export function PhotoCropperCard({
       console.error('🎯 CAST DEBUG: Share to Farcaster error:', error);
       sendNotification({
         title: 'Cast Failed',
-        body: `Could not share to Farcaster: ${error.message || 'Unknown error'}`
+        body: `Could not share image: ${error.message || 'Unknown error'}`
       });
     } finally {
       setIsProcessing(false);
@@ -1320,7 +1320,7 @@ export function PhotoCropperCard({
           >
             <div className="text-[var(--app-foreground)] mb-2">
               <p className={`${isDragOver ? 'font-medium' : 'text-lg font-medium'}`}>
-                {isDragOver ? 'Drop your photo here!' : 'Create perfect crops for Farcaster'}
+                {isDragOver ? 'Drop your photo here!' : 'Kroppit like it\'s hot'}
               </p>
               <p className="text-sm text-[var(--app-foreground-muted)]">
                 {isDragOver ? 'Release to upload' : 'Drag & drop or click to browse'}
@@ -1597,7 +1597,7 @@ export function PhotoCropperCard({
                   Publishing Cast...
                 </div>
               ) : (
-                'Share on Farcaster'
+                'Share'
               )}
             </Button>
 
