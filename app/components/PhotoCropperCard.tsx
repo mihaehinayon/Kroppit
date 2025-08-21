@@ -1320,7 +1320,7 @@ export function PhotoCropperCard({
           >
             <div className="text-[var(--app-foreground)] mb-2">
               <p className={`${isDragOver ? 'font-medium' : 'text-lg font-medium'}`}>
-                {isDragOver ? 'Drop your photo here!' : 'Kroppit like it\'s hot'}
+                {isDragOver ? 'Drop your photo here!' : "Kroppit like it's hot"}
               </p>
               <p className="text-sm text-[var(--app-foreground-muted)]">
                 {isDragOver ? 'Release to upload' : 'Drag & drop or click to browse'}
